@@ -15,15 +15,13 @@
 //
 //*****************************************************************************
 
-#define __AVR_ATmega644P__ 1
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
 #include "i2c.h"
-
+#include "../lib/Comm.h"
 #include "rprintf.h"	// include printf function library
-#include "uart2.h"
+//#include "uart2.h"
 
 // Standard I2C bit rates are:
 // 100KHz for slow speed
@@ -54,6 +52,11 @@ static u08 (*i2cSlaveTransmit)(u08 transmitDataLengthMax, u08* transmitData);
 // functions
 void i2cInit(void)
 {
+  #ifdef I2C_DEBUG
+    rprintfInit(commTxCh);
+  #endif
+
+
 	// set pull-up resistors on I2C bus pins
 	// TODO: should #ifdef these
 	sbi(PORTC, 0);	// i2c SCL on ATmega163,323,16,32,etc
@@ -363,7 +366,8 @@ void i2cMasterTransferNI(u08 deviceAddr, u08 sendlength, u08* senddata, u08 rece
 */
 
 //! I2C (TWI) interrupt service routine
-SIGNAL(SIG_2WIRE_SERIAL)
+//SIGNAL(SIG_2WIRE_SERIAL)
+ISR(TWI_vect)
 {
 	// read status bits
 	u08 status = inb(TWSR) & TW_STATUS_MASK;
@@ -374,9 +378,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_START:						// 0x08: Sent start condition
 	case TW_REP_START:					// 0x10: Sent repeated start condition
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: M->START\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// send device address
 		i2cSendByte(I2cDeviceAddrRW);
@@ -386,9 +388,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_MT_SLA_ACK:					// 0x18: Slave address acknowledged
 	case TW_MT_DATA_ACK:				// 0x28: Data acknowledged
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: MT->SLA_ACK or DATA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		if(I2cSendDataIndex < I2cSendDataLength)
 		{
@@ -405,9 +405,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		break;
 	case TW_MR_DATA_NACK:				// 0x58: Data received, NACK reply issued
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: MR->DATA_NACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// store final received data byte
 		I2cReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
@@ -416,9 +414,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_MT_SLA_NACK:				// 0x20: Slave address not acknowledged
 	case TW_MT_DATA_NACK:				// 0x30: Data not acknowledged
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: MTR->SLA_NACK or MT->DATA_NACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// transmit stop condition, enable SLA ACK
 		i2cSendStop();
@@ -428,9 +424,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_MT_ARB_LOST:				// 0x38: Bus arbitration lost
 	//case TW_MR_ARB_LOST:				// 0x38: Bus arbitration lost
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: MT->ARB_LOST\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// release bus
 		outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT));
@@ -441,18 +435,14 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		break;
 	case TW_MR_DATA_ACK:				// 0x50: Data acknowledged
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: MR->DATA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// store received data byte
 		I2cReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
 		// fall-through to see if more bytes will be received
 	case TW_MR_SLA_ACK:					// 0x40: Slave address acknowledged
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: MR->SLA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		if(I2cReceiveDataIndex < (I2cReceiveDataLength-1))
 			// data byte will be received, reply with ACK (more bytes in transfer)
@@ -468,9 +458,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_SR_GCALL_ACK:				// 0x70:     GCA+W has been received, ACK has been returned
 	case TW_SR_ARB_LOST_GCALL_ACK:		// 0x78:     GCA+W has been received, ACK has been returned
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: SR->SLA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// we are being addressed as slave for writing (data will be received from master)
 		// set state
@@ -483,9 +471,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_SR_DATA_ACK:				// 0x80: data byte has been received, ACK has been returned
 	case TW_SR_GCALL_DATA_ACK:			// 0x90: data byte has been received, ACK has been returned
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: SR->DATA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// get previously received data byte
 		I2cReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
@@ -506,9 +492,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_SR_DATA_NACK:				// 0x88: data byte has been received, NACK has been returned
 	case TW_SR_GCALL_DATA_NACK:			// 0x98: data byte has been received, NACK has been returned
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: SR->DATA_NACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// receive data byte and return NACK
 		i2cReceiveByte(FALSE);
@@ -516,9 +500,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		break;
 	case TW_SR_STOP:					// 0xA0: STOP or REPEATED START has been received while addressed as slave
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: SR->SR_STOP\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// switch to SR mode with SLA ACK
 		outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT)|BV(TWEA));
@@ -532,9 +514,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_ST_SLA_ACK:					// 0xA8: own SLA+R has been received, ACK has been returned
 	case TW_ST_ARB_LOST_SLA_ACK:		// 0xB0:     GCA+R has been received, ACK has been returned
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: ST->SLA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// we are being addressed as slave for reading (data must be transmitted back to master)
 		// set state
@@ -546,9 +526,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		// fall-through to transmit first data byte
 	case TW_ST_DATA_ACK:				// 0xB8: data byte has been transmitted, ACK has been received
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: ST->DATA_ACK\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// transmit data byte
 		outb(TWDR, I2cSendData[I2cSendDataIndex++]);
@@ -562,9 +540,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_ST_DATA_NACK:				// 0xC0: data byte has been transmitted, NACK has been received
 	case TW_ST_LAST_DATA:				// 0xC8:
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: ST->DATA_NACK or LAST_DATA\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// all done
 		// switch to open slave
@@ -577,16 +553,12 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	case TW_NO_INFO:					// 0xF8: No relevant state information
 		// do nothing
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: NO_INFO\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		break;
 	case TW_BUS_ERROR:					// 0x00: Bus error due to illegal start or stop condition
 		#ifdef I2C_DEBUG
-		rprintfInit(uart1AddToTxBuffer);
 		rprintf("I2C: BUS_ERROR\r\n");
-		rprintfInit(uart1SendByte);
 		#endif
 		// reset internal hardware and release bus
 		outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT)|BV(TWSTO)|BV(TWEA));

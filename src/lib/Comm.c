@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <stdio.h>
 #include "Util.h"
 #include "Comm.h"
 
@@ -62,3 +63,4 @@ char commInKey()
   if ( (UCSR0A & (1<<RXC0)) ) return UDR0;
 	return 0;
 }
+

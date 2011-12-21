@@ -26,6 +26,7 @@
 // global AVRLIB types definitions
 #include <avrlibtypes.h>
 
+#define I2C_DEBUG 1
 // project/system dependent defines
 
 // CPU clock speed

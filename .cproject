@@ -29,7 +29,7 @@
 							<builder buildPath="${workspace_loc:/QuakeCatcher/Debug}" enableAutoBuild="true" id="de.innot.avreclipse.target.builder.winavr.app.debug.1924756345" keepEnvironmentInBuildfile="false" name="AVR GNU Make Builder" superClass="de.innot.avreclipse.target.builder.winavr.app.debug"/>
 							<tool id="de.innot.avreclipse.tool.assembler.winavr.app.debug.1596343432" name="AVR Assembler" superClass="de.innot.avreclipse.tool.assembler.winavr.app.debug">
 								<option id="de.innot.avreclipse.assembler.option.debug.level.1789943779" name="Generate Debugging Info" superClass="de.innot.avreclipse.assembler.option.debug.level"/>
-								<option id="de.innot.avreclipse.asm.option.include.paths.1304755388" name="#include paths for preprocessor(-I)" superClass="de.innot.avreclipse.asm.option.include.paths" valueType="includePath"/>
+								<option id="de.innot.avreclipse.asm.option.include.paths.1304755388" name="#include paths for preprocessor(-I)" superClass="de.innot.avreclipse.asm.option.include.paths"/>
 								<inputType id="de.innot.avreclipse.tool.assembler.input.800980424" superClass="de.innot.avreclipse.tool.assembler.input"/>
 							</tool>
 							<tool id="de.innot.avreclipse.tool.compiler.winavr.app.debug.1495217477" name="AVR Compiler" superClass="de.innot.avreclipse.tool.compiler.winavr.app.debug">
@@ -60,8 +60,12 @@
 							<tool id="de.innot.avreclipse.tool.avrdude.app.debug.1725697874" name="AVRDude" superClass="de.innot.avreclipse.tool.avrdude.app.debug"/>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="de.innot.avreclipse.configuration.app.debug.1620563455.199292646" name="uart.h" rcbsApplicability="disable" resourcePath="src/avr/driver/uart.h" toolsToInvoke=""/>
+					<fileInfo id="de.innot.avreclipse.configuration.app.debug.1620563455.711695702" name="bma180_i2c.c" rcbsApplicability="disable" resourcePath="src/device/bma180/bma180_i2c.c" toolsToInvoke="de.innot.avreclipse.tool.compiler.winavr.app.debug.1495217477.1340811201">
+						<tool id="de.innot.avreclipse.tool.compiler.winavr.app.debug.1495217477.1340811201" name="AVR Compiler" superClass="de.innot.avreclipse.tool.compiler.winavr.app.debug.1495217477"/>
+					</fileInfo>
 					<sourceEntries>
-						<entry excluding="src/procyon/uart.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/avr/driver/uart.h|src/avr/driver/uart.c|src/procyon/uart.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

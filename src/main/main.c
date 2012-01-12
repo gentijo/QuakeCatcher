@@ -1,4 +1,3 @@
-
 #include <avr/io.h>
 #include <stdio.h>
 #include <util/delay.h>
@@ -6,6 +5,9 @@
 #include "../lib/Comm.h"
 #include "../avr/driver/i2c.h"
 #include "../device/HMC5843/HMC5843.h"
+#include "../device/bma180/bma180_i2c.h"
+#include "../avr/driver/uart2.h"
+#include "../avr/rprintf.h"
 
 static int uart_putchar (char c, FILE *stream);
 void ioinit (void);
@@ -13,14 +15,49 @@ void ioinit (void);
 static FILE mystdout = FDEV_SETUP_STREAM (uart_putchar, NULL, _FDEV_SETUP_WRITE);
 
 
+void sendIO(u08 uartReceiveId, u08 uartSendId)
+{
+	u08 data;
+	bool dataToSend = false;
+
+	while (uartReceiveByte(uartReceiveId, &data)) {
+		dataToSend = true;
+		uartAddToTxBuffer(uartSendId, data);
+	}
+	if (dataToSend)
+		uartSendTxBuffer(uartSendId);
+}
+
+/**
+ * Full-duplex send/receive between UART0 and UART1
+ */
+void uartTest()
+{
+	uartInit();
+
+	// rprintfInit(uart0SendByte);
+	rprintfInit(uart0AddToTxBuffer);
+	rprintf("UART Serial IO Tester\n");
+	_delay_ms(1000);
+	uartSendTxBuffer(0);
+
+	while (true) {
+		sendIO(0, 1);
+		sendIO(1, 0);
+	}
+}
+
 int main()
 {
-  ioinit();
+	uartTest();
 
-	printf("Quake Catcher Development Board V0.99\n");
+	return 0;
 
-//  HMC5843Test();
-	bma180_test();
+	/*
+	  ioinit();
+
+	  HMC5843Test();
+	// bma180_test();
 
 	for(int x=0; x<100000; x++)
 	{
@@ -30,10 +67,14 @@ int main()
 
 	while(true);
 	return 0;
+	*/
 }
 
 void ioinit (void)
 {
+
+	// uartInit();
+
   CLKPR = 0x80;
   CLKPR = 0x81;
 

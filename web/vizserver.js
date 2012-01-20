@@ -1,6 +1,13 @@
 /**
  Web server that serves up visualization code for quack catcher network
+
+ 1) Install NodeJS: https://github.com/joyent/node/wiki/Installation
+ 2) run from cmd line: 'node vizserver.js'
+
  **/
+
+var webport = 8124;
+var dataport = 8125;
 
 var http = require('http');
 var net = require('net');
@@ -46,7 +53,7 @@ http.createServer(function (req, res) {
 			res.end('Hello There!\n');
 		}
 	})
-}).listen(8124, "127.0.0.1");
+}).listen(webport, "127.0.0.1");
 console.log('Web Server running at http://127.0.0.1:8124/');
 
 /**
@@ -63,5 +70,5 @@ net.createServer(function (c) {
 	c.on('end', function() {
 		console.log('Connection Ended');
 	})
-}).listen(8125, '127.0.0.1');
+}).listen(dataport, '127.0.0.1');
 console.log('Data Server listening on 127.0.0.1:8125');

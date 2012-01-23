@@ -8,6 +8,7 @@
 #include "../device/bma180/bma180_i2c.h"
 #include "../avr/driver/uart2.h"
 #include "../avr/rprintf.h"
+#include "sensors.h"
 
 static int uart_putchar (char c, FILE *stream);
 void ioinit (void);
@@ -49,25 +50,13 @@ void uartTest()
 
 int main()
 {
-	uartTest();
+	ioinit();
+
+	initSensorModule();
+
+	sensorMainLoop();
 
 	return 0;
-
-	/*
-	  ioinit();
-
-	  HMC5843Test();
-	// bma180_test();
-
-	for(int x=0; x<100000; x++)
-	{
-		printf("Hello World\n");
-		_delay_ms(1000);
-	}
-
-	while(true);
-	return 0;
-	*/
 }
 
 void ioinit (void)
@@ -98,9 +87,13 @@ void ioinit (void)
   // PRADC: Power Reduction ADC
   // PRR = (1<<PRTIM2) | (1<<PRTIM0) | (1<<PRUSART1) | (1<<PRTIM1) | (1<<PRSPI) | (1<<PRADC);
 
-  stdout = &mystdout;
 
-  commInit2(38400, true, true);
+
+  // 2012-0122 rchan - now using async uart driver (uart2) instead
+  /*stdout = &mystdout;
+
+  commInit2(38400, true, true);*/
+
   i2cInit();
 
   _delay_ms(100);

@@ -131,6 +131,25 @@ typedef enum
 
 // functions
 
+/**
+ * type for driver callback functions
+ */
+typedef void (*i2cCallbackFn)(void);
+
+/**
+ * allows a single callback fn (subsequent calls to this method will
+ * override earlier ones) to be registered to be called when
+ * an async send operation has completed
+ */
+void registerI2cSendCompleteCallback(i2cCallbackFn fn);
+
+/**
+ * allows a single callback fn (subsequent calls to this method will
+ * override earlier ones) to be registered to be called when
+ * an async receive operation has completed
+ */
+void registerI2cReceiveCompleteCallback(i2cCallbackFn fn);
+
 //! Initialize I2C (TWI) interface
 void i2cInit(void);
 

@@ -26,7 +26,7 @@
 // 100KHz for slow speed
 // 400KHz for high speed
 
-//#define I2C_DEBUG
+// #define I2C_DEBUG
 
 // I2C state and address variables
 static volatile eI2cStateType I2cState;
@@ -51,7 +51,22 @@ static void (*i2cSlaveReceive)(u08 receiveDataLength, u08* recieveData);
 // is addressed as a slave for reading
 static u08 (*i2cSlaveTransmit)(u08 transmitDataLengthMax, u08* transmitData);
 
+static i2cCallbackFn sendCallback = NULL;
+static i2cCallbackFn receiveCallback = NULL;
+
 // functions
+
+void registerI2cSendCompleteCallback(i2cCallbackFn fn)
+{
+	sendCallback = fn;
+}
+
+void registerI2cReceiveCompleteCallback(i2cCallbackFn fn)
+{
+	receiveCallback = fn;
+}
+
+
 void i2cInit(void)
 {
 	// clear SlaveReceive and SlaveTransmit handler to null
@@ -67,9 +82,7 @@ void i2cInit(void)
 	// enable TWI interrupt and slave address ACK
 	sbi(TWCR, TWIE);
 	sbi(TWCR, TWEA);
-	//outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT)|BV(TWEA));
-	// enable interrupts
-//	sei();
+	// outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT)|BV(TWEA));
 }
 
 void i2cSetBitrate(u16 bitrateKHz)
@@ -180,12 +193,15 @@ void i2cMasterSend(u08 deviceAddr, u08 length, u08* data)
 	I2cSendDataLength = length;
 	// send start condition
 	i2cSendStart();
+
+	// printf("started send\n");
 }
 
 void i2cMasterReceive(u08 deviceAddr, u08 length, u08* data)
 {
 	u08 i;
 	// wait for interface to be ready
+	// printf("i2c state %d\n", I2cState);
 	while(I2cState);
 	// set state
 	I2cState = I2C_MASTER_RX;
@@ -307,6 +323,11 @@ ISR(TWI_vect)
 	// read status bits
 	u08 status = inb(TWSR) & TW_STATUS_MASK;
 
+	#ifdef I2C_DEBUG
+	printf("i2c %d\n", status);
+	#endif
+
+
 	switch(status)
 	{
 	// Master General
@@ -336,6 +357,11 @@ ISR(TWI_vect)
 			i2cSendStop();
 			// set state
 			I2cState = I2C_IDLE;
+
+			// execute send callback (if any)
+			if (sendCallback != NULL) {
+				sendCallback();
+			}
 		}
 		break;
 
@@ -356,6 +382,11 @@ ISR(TWI_vect)
 		i2cSendStop();
 		// set state
 		I2cState = I2C_IDLE;
+
+		// execute receive callback (if any)
+		if (receiveCallback != NULL) {
+			receiveCallback();
+		}
 		break;
 	case TW_MT_ARB_LOST:				// 0x38: Bus arbitration lost
 	//case TW_MR_ARB_LOST:				// 0x38: Bus arbitration lost

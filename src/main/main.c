@@ -48,9 +48,14 @@ void uartTest()
 	}
 }
 
+uint8_t cmd_single[] = {0x02, 0x01};
+
 int main()
 {
 	ioinit();
+
+	// enable interrupts globally
+	sei();
 
 	initSensorModule();
 
@@ -86,13 +91,6 @@ void ioinit (void)
   // PRUSART0: Power Reduction USART0
   // PRADC: Power Reduction ADC
   // PRR = (1<<PRTIM2) | (1<<PRTIM0) | (1<<PRUSART1) | (1<<PRTIM1) | (1<<PRSPI) | (1<<PRADC);
-
-
-
-  // 2012-0122 rchan - now using async uart driver (uart2) instead
-  /*stdout = &mystdout;
-
-  commInit2(38400, true, true);*/
 
   i2cInit();
 

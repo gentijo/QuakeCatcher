@@ -137,7 +137,6 @@ void captureData()
 	enqueueSensorQueue(&_readHMC5843);
 	enqueueSensorQueue(&_processHMC5843);
 	enqueueSensorQueue(&_HMC5843_start_single);
-	enqueueSensorQueue(&clearSensorQueue);
 
 	// start executing...
 	startSensorQueue();
@@ -210,6 +209,9 @@ static void _processHMC5843()
 	rprintf("z=%d\n ",v );
 
 	uartSendTxBuffer(0);
+
+	// signal fn complete
+	sensorQueueFnComplete();
 }
 
 static void _HMC5843_start_single()

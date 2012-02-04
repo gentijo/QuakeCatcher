@@ -48,6 +48,17 @@ void uartTest()
 	}
 }
 
+void test_bma180()
+{
+
+	uartInit();
+	rprintfInit(uart0AddToTxBuffer);
+
+	bma180_test();
+
+	return 0;
+}
+
 uint8_t cmd_single[] = {0x02, 0x01};
 
 int main()
@@ -58,6 +69,7 @@ int main()
 	sei();
 
 	initSensorModule();
+
 
 	sensorMainLoop();
 

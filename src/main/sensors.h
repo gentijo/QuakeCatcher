@@ -3,10 +3,13 @@
 
 // All the sensors 2 bytes per axis, 3 axis
 
-#define NUM_SENSORS 1
+#define NUM_SENSORS 2
 #define SAMPLES_PER_SECOND 50
 #define SAMPLES_PER_DATA_PAGE 50
 #define NUM_DATA_PAGES 10
+
+#define SENSOR_ID_HMC5843 0
+#define SENSOR_ID_BMA180 1
 
 #define NUM_SAMPLE_BYTES 6 // sizeof(struct_SensorReading)
 

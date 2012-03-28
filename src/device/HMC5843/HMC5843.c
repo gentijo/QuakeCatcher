@@ -8,6 +8,7 @@
 #include <avr/sfr_defs.h>
 #include <util/delay.h>
 #include "../../avr/driver/i2c.h"
+#include "HMC5843.h"
 
 ///============Function Prototypes=========/////////////////
 void HMC5843(void);

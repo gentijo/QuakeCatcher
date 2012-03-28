@@ -186,9 +186,9 @@ u08 i2cGetStatus(void);
 // high-level I2C transaction commands
 
 //! send I2C data to a device on the bus
-void i2cMasterSend(u08 deviceAddr, u08 length, u08 *data);
+void i2cMasterSend(u08 deviceAddr, u08 length, u08 *data, i2cCallbackFn callback);
 //! receive I2C data from a device on the bus
-void i2cMasterReceive(u08 deviceAddr, u08 length, u08* data);
+void i2cMasterReceive(u08 deviceAddr, u08 length, u08* data, i2cCallbackFn callback);
 
 //! send I2C data to a device on the bus (non-interrupt based)
 u08 i2cMasterSendNI(u08 deviceAddr, u08 length, u08* data);

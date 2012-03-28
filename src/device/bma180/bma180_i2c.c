@@ -2,16 +2,27 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <avr/io.h>
+
 #include <util/delay.h>
+#include "global.h"
 #include "../../avr/driver/i2c.h"
 
 #include "bma180_i2c.h"
 
 bool ee_w = false;
 
+static    u08     m_valueRegAddr = 0x02;
+volatile  bool    sensorDataReady = false;
+static    u08     *sensorData;
+
+void bma180_ReadSensorData_p2();
+void bma180_ReadSensorData_p3();
+
+static genericVoidCallbackFn sampleCompleteCallback;
+
 void bma180_test()
 {
-  uint8_t value[6];
+  u08 sensorDataBuffer[6];
 
   bma180_init();
   bma180_SetRange(r2G);
@@ -19,15 +30,17 @@ void bma180_test()
 
   while(1)
   {
-      bma180_ReadSensorData(value);
+      bma180_ReadSensorData(sensorDataBuffer, NULL);
+      while(!sensorDataReady);
+
       uint16_t x, y, z;
-      x = value[1]<<8|value[0];
+      x = sensorDataBuffer[1]<<8|sensorDataBuffer[0];
       x = x >> 2;
 
-      y = value[3]<<8|value[2];
+      y = sensorDataBuffer[3]<<8|sensorDataBuffer[2];
       y = y >> 2;
 
-      z = value[5]<<8|value[4];
+      z = sensorDataBuffer[5]<<8|sensorDataBuffer[4];
       z= z >> 2;
       
       printf("X=%d, Y=%d, Z=%d\n", x, y, z);
@@ -125,20 +138,26 @@ bool bma180_Set_SMP_Skip(bool enable)
   return bma180_ModReg(0x35, 0B1111110, (enable & 0B00000001));
 }
 
-
-bool bma180_ReadSensorData(uint8_t *value)
+void bma180_ReadSensorData(u08 *buffer, genericVoidCallbackFn callback)
 {
-  uint8_t address = 0x02;
-  if (i2cMasterSendNI(BMA180_DeviceID, 1, &address) != I2C_OK) return false;
-  if (i2cMasterReceiveNI(BMA180_DeviceID, 6, value) != I2C_OK) return false;
-/*
-  value[1] = value[1] >> 2;
-  value[2] = value[2] >> 2;
-  value[3] = value[3] >> 2;
-*/
-  return true;
+  sensorData = buffer;
+  sampleCompleteCallback = callback;
+  sensorDataReady=false;
+  i2cMasterSend(BMA180_DeviceID, 1, &m_valueRegAddr, bma180_ReadSensorData_p2);
 }
 
+void bma180_ReadSensorData_p2()
+{
+  printf("bma180-p2\n");
+  i2cMasterReceive(BMA180_DeviceID, 6, sensorData, bma180_ReadSensorData_p3);
+}
+
+void bma180_ReadSensorData_p3()
+{
+  printf("bma180-p3\n");
+  sensorDataReady=true;
+  if (sampleCompleteCallback != NULL) sampleCompleteCallback();
+}
 
 bool bma180_ReadReg(uint8_t address, uint8_t *value)
 {

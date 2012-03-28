@@ -8,8 +8,8 @@
 #define SAMPLES_PER_DATA_PAGE 50
 #define NUM_DATA_PAGES 10
 
-#define SENSOR_ID_HMC5843 0
-#define SENSOR_ID_BMA180 1
+#define SENSOR_ID_BMA180 0
+#define SENSOR_ID_HMC5843 1
 
 #define NUM_SAMPLE_BYTES 6 // sizeof(struct_SensorReading)
 
@@ -32,7 +32,10 @@ typedef struct struct_DataPage {
 
 typedef struct struct_DataBuffer {
 	DataPage pages[NUM_DATA_PAGES];
-	uint8_t currPage;
+	uint8_t currPageIn;
+  uint8_t currSampleIn;
+
+  uint8_t currPageOut;
 } DataBuffer;
 
 typedef void (*sensorReadFn)(uint8_t *);

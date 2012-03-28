@@ -15,6 +15,25 @@ void ioinit (void);
 
 static FILE mystdout = FDEV_SETUP_STREAM (uart_putchar, NULL, _FDEV_SETUP_WRITE);
 
+int main()
+{
+  ioinit();
+  uart0Init();
+  stdout = &mystdout;
+
+  // enable interrupts globally
+  sei();
+
+  printf("\nInit Complete\n");
+
+//  bma180_test();
+
+  initSensorModule();
+  sensorMainLoop();
+
+  return 0;
+}
+
 
 void sendIO(u08 uartReceiveId, u08 uartSendId)
 {
@@ -48,33 +67,6 @@ void uartTest()
 	}
 }
 
-void test_bma180()
-{
-
-	uartInit();
-	rprintfInit(uart0AddToTxBuffer);
-
-	bma180_test();
-
-	return 0;
-}
-
-uint8_t cmd_single[] = {0x02, 0x01};
-
-int main()
-{
-	ioinit();
-
-	// enable interrupts globally
-	sei();
-
-	initSensorModule();
-
-
-	sensorMainLoop();
-
-	return 0;
-}
 
 void ioinit (void)
 {
@@ -114,6 +106,9 @@ static int uart_putchar (char c, FILE *stream)
 {
     if (c == '\n')
         uart_putchar('\r', stream);
-    commTxCh(c);
+
+    uartAddToTxBuffer(0, c);
+    uartSendTxBuffer(0);
+
     return 0;
 }

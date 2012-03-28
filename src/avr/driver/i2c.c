@@ -31,12 +31,16 @@
 // I2C state and address variables
 static volatile eI2cStateType I2cState;
 static u08 I2cDeviceAddrRW;
+
 // send/transmit buffer (outgoing data)
-static u08 I2cSendData[I2C_SEND_DATA_BUFFER_SIZE];
+//static u08 I2cSlaveSendBuffer[I2C_SEND_DATA_BUFFER_SIZE];
+static u08 *I2cMasterSendData;
 static u08 I2cSendDataIndex;
 static u08 I2cSendDataLength;
+
 // receive buffer (incoming data)
-static u08 I2cReceiveData[I2C_RECEIVE_DATA_BUFFER_SIZE];
+static u08 I2cSlaveReceiveData[I2C_RECEIVE_DATA_BUFFER_SIZE];
+static u08 *I2cMasterReceiveData;
 static u08 I2cReceiveDataIndex;
 static u08 I2cReceiveDataLength;
 
@@ -51,20 +55,8 @@ static void (*i2cSlaveReceive)(u08 receiveDataLength, u08* recieveData);
 // is addressed as a slave for reading
 static u08 (*i2cSlaveTransmit)(u08 transmitDataLengthMax, u08* transmitData);
 
-static i2cCallbackFn sendCallback = NULL;
-static i2cCallbackFn receiveCallback = NULL;
-
-// functions
-
-void registerI2cSendCompleteCallback(i2cCallbackFn fn)
-{
-	sendCallback = fn;
-}
-
-void registerI2cReceiveCompleteCallback(i2cCallbackFn fn)
-{
-	receiveCallback = fn;
-}
+static i2cCallbackFn I2cMasterSendCallback = NULL;
+static i2cCallbackFn I2cMasterReceiveCallback = NULL;
 
 
 void i2cInit(void)
@@ -178,44 +170,62 @@ inline u08 i2cGetStatus(void)
 	return( inb(TWSR) );
 }
 
-void i2cMasterSend(u08 deviceAddr, u08 length, u08* data)
+/**
+ * Interrupt driven i2c Send function, this function will return immediately
+ * before all the data has been transmitted. Once the data has been transmitted,
+ * the callback function will be called. In the callback function care needs to
+ * be taken not to spend too much time before returning or doing something that
+ * consumes any amount of stack space as the callback will occur in the domain
+ * of the ISR.
+ *
+ * It is the responsibility of the caller to alloc the data buffer and hold
+ * on to it until the transmission is complete.
+ *
+ */
+void i2cMasterSend(u08 deviceAddr, u08 length, u08* data, i2cCallbackFn callback )
 {
-	u08 i;
-	// wait for interface to be ready
+	// enable TWI interrupt
+  sbi(TWCR, TWIE);
+
+  // wait for interface to be ready
 	while(I2cState);
+
 	// set state
 	I2cState = I2C_MASTER_TX;
 	// save data
 	I2cDeviceAddrRW = (deviceAddr & 0xFE);	// RW cleared: write operation
-	for(i=0; i<length; i++)
-		I2cSendData[i] = *data++;
+
+	I2cMasterSendCallback = callback;
+
+	I2cMasterSendData = data;
 	I2cSendDataIndex = 0;
 	I2cSendDataLength = length;
+
 	// send start condition
 	i2cSendStart();
 
 	// printf("started send\n");
 }
 
-void i2cMasterReceive(u08 deviceAddr, u08 length, u08* data)
+void i2cMasterReceive(u08 deviceAddr, u08 length, u08* data, i2cCallbackFn callback)
 {
-	u08 i;
-	// wait for interface to be ready
-	// printf("i2c state %d\n", I2cState);
+	// enable TWI interrupt
+  sbi(TWCR, TWIE);
+
+  // wait for interface to be ready
 	while(I2cState);
+
 	// set state
 	I2cState = I2C_MASTER_RX;
 	// save data
 	I2cDeviceAddrRW = (deviceAddr|0x01);	// RW set: read operation
+
+	I2cMasterReceiveCallback = callback;
+	I2cMasterReceiveData = data;
 	I2cReceiveDataIndex = 0;
 	I2cReceiveDataLength = length;
 	// send start condition
 	i2cSendStart();
-	// wait for data
-	while(I2cState);
-	// return data
-	for(i=0; i<length; i++)
-		*data++ = I2cReceiveData[i];
 }
 
 u08 i2cMasterSendNI(u08 deviceAddr, u08 length, u08* data)
@@ -224,6 +234,7 @@ u08 i2cMasterSendNI(u08 deviceAddr, u08 length, u08* data)
 
 	// disable TWI interrupt
 	cbi(TWCR, TWIE);
+  I2cMasterSendCallback = NULL;
 
 	// send start condition
 	i2cSendStart();
@@ -269,6 +280,7 @@ u08 i2cMasterReceiveNI(u08 deviceAddr, u08 length, u08 *data)
 
 	// disable TWI interrupt
 	cbi(TWCR, TWIE);
+  I2cMasterReceiveCallback = NULL;
 
 //  printf("MR addr=%d, len=%d", deviceAddr, length);
 
@@ -349,7 +361,7 @@ ISR(TWI_vect)
 		if(I2cSendDataIndex < I2cSendDataLength)
 		{
 			// send data
-			i2cSendByte( I2cSendData[I2cSendDataIndex++] );
+			i2cSendByte( I2cMasterSendData[I2cSendDataIndex++] );
 		}
 		else
 		{
@@ -359,8 +371,8 @@ ISR(TWI_vect)
 			I2cState = I2C_IDLE;
 
 			// execute send callback (if any)
-			if (sendCallback != NULL) {
-				sendCallback();
+			if (I2cMasterSendCallback != NULL) {
+				I2cMasterSendCallback();
 			}
 		}
 		break;
@@ -370,7 +382,7 @@ ISR(TWI_vect)
 		  printf("I2C: MR->DATA_NACK\r\n");
 		#endif
 		// store final received data byte
-		I2cReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
+		I2cMasterReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
 		// continue to transmit STOP condition
 	case TW_MR_SLA_NACK:				// 0x48: Slave address not acknowledged
 	case TW_MT_SLA_NACK:				// 0x20: Slave address not acknowledged
@@ -384,8 +396,8 @@ ISR(TWI_vect)
 		I2cState = I2C_IDLE;
 
 		// execute receive callback (if any)
-		if (receiveCallback != NULL) {
-			receiveCallback();
+		if (I2cMasterReceiveCallback != NULL) {
+			I2cMasterReceiveCallback();
 		}
 		break;
 	case TW_MT_ARB_LOST:				// 0x38: Bus arbitration lost
@@ -405,7 +417,7 @@ ISR(TWI_vect)
 		  printf("I2C: MR->DATA_ACK\r\n");
 		#endif
 		// store received data byte
-		I2cReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
+		I2cMasterReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
 		// fall-through to see if more bytes will be received
 	case TW_MR_SLA_ACK:					// 0x40: Slave address acknowledged
 		#ifdef I2C_DEBUG
@@ -442,7 +454,7 @@ ISR(TWI_vect)
 		  printf("I2C: SR->DATA_ACK\r\n");
 		#endif
 		// get previously received data byte
-		I2cReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
+		I2cSlaveReceiveData[I2cReceiveDataIndex++] = inb(TWDR);
 		// check receive buffer status
 		if(I2cReceiveDataIndex < I2C_RECEIVE_DATA_BUFFER_SIZE)
 		{
@@ -475,7 +487,7 @@ ISR(TWI_vect)
 		// switch to SR mode with SLA ACK
 		outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT)|BV(TWEA));
 		// i2c receive is complete, call i2cSlaveReceive
-		if(i2cSlaveReceive) i2cSlaveReceive(I2cReceiveDataIndex, I2cReceiveData);
+		if(i2cSlaveReceive) i2cSlaveReceive(I2cReceiveDataIndex, I2cMasterReceiveData);
 		// set state
 		I2cState = I2C_IDLE;
 		break;
@@ -490,7 +502,7 @@ ISR(TWI_vect)
 		// set state
 		I2cState = I2C_SLAVE_TX;
 		// request data from application
-		if(i2cSlaveTransmit) I2cSendDataLength = i2cSlaveTransmit(I2C_SEND_DATA_BUFFER_SIZE, I2cSendData);
+		if(i2cSlaveTransmit) I2cSendDataLength = i2cSlaveTransmit(I2C_SEND_DATA_BUFFER_SIZE, I2cMasterSendData);
 		// reset data index
 		I2cSendDataIndex = 0;
 		// fall-through to transmit first data byte
@@ -499,7 +511,7 @@ ISR(TWI_vect)
 		  printf("I2C: ST->DATA_ACK\r\n");
 		#endif
 		// transmit data byte
-		outb(TWDR, I2cSendData[I2cSendDataIndex++]);
+		outb(TWDR, I2cMasterSendData[I2cSendDataIndex++]);
 		if(I2cSendDataIndex < I2cSendDataLength)
 			// expect ACK to data byte
 			outb(TWCR, (inb(TWCR)&TWCR_CMD_MASK)|BV(TWINT)|BV(TWEA));

@@ -49,7 +49,7 @@ bool bma180_SetBandwidth(enum Bandwidth bw);
 bool bma180_SetNewDataInterrupt(bool enable);
 bool bma180_Set_SMP_Skip(bool enable);
 
-bool bma180_ReadSensorData(uint8_t *value);
+void bma180_ReadSensorData(u08 *buffer, genericVoidCallbackFn callback);
 bool bma180_ReadReg(uint8_t address, uint8_t *target);
 bool bma180_WriteReg(uint8_t address, uint8_t value);
 bool bma180_ModReg(uint8_t address, uint8_t mask, uint8_t value);

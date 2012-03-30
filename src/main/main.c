@@ -12,6 +12,7 @@
 
 static int uart_putchar (char c, FILE *stream);
 void ioinit (void);
+void uartLoopBack();
 
 static FILE mystdout = FDEV_SETUP_STREAM (uart_putchar, NULL, _FDEV_SETUP_WRITE);
 
@@ -19,6 +20,8 @@ int main()
 {
   ioinit();
   uart0Init();
+  uart1Init();
+
   stdout = &mystdout;
 
   // enable interrupts globally
@@ -28,44 +31,42 @@ int main()
 
 //  bma180_test();
 
-  initSensorModule();
-  sensorMainLoop();
+//  initSensorModule();
+//  sensorMainLoop();
+
+  uartLoopBack();
 
   return 0;
 }
 
+/**
+ * Full-duplex send/receive between UART0 and UART1
+ */
+void uartLoopBack()
+{
+  printf("UART Serial IO Tester\n");
+
+  while (true) {
+    sendIO(0, 1);
+    sendIO(1, 0);
+  }
+}
 
 void sendIO(u08 uartReceiveId, u08 uartSendId)
 {
 	u08 data;
 	bool dataToSend = false;
 
-	while (uartReceiveByte(uartReceiveId, &data)) {
+	while (uartReceiveByte(uartReceiveId, &data))
+	{
 		dataToSend = true;
 		uartAddToTxBuffer(uartSendId, data);
 	}
+
 	if (dataToSend)
 		uartSendTxBuffer(uartSendId);
 }
 
-/**
- * Full-duplex send/receive between UART0 and UART1
- */
-void uartTest()
-{
-	uartInit();
-
-	// rprintfInit(uart0SendByte);
-	rprintfInit(uart0AddToTxBuffer);
-	rprintf("UART Serial IO Tester\n");
-	_delay_ms(1000);
-	uartSendTxBuffer(0);
-
-	while (true) {
-		sendIO(0, 1);
-		sendIO(1, 0);
-	}
-}
 
 
 void ioinit (void)

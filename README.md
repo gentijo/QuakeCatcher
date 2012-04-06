@@ -27,4 +27,6 @@ Most of the coding will be done in basic C to tie together all of the electronic
 
 #### Industrial Design ####
 
+<a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_01.jpg?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_01.jpg?raw=true" width="50%"></a><a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_02.jpg?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_02.jpg?raw=true" width="50%"></a>
+
 The construction of the case will be designed for outdoor use. The long term goal is to create a self contained unit that doesn't require constant maintenance and, with potentially the use of better wireless technology (like 3g), the device could theoretically be used in remote locations (ie instrumenting a fault line).

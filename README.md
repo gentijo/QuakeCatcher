@@ -29,4 +29,10 @@ Most of the coding will be done in basic C to tie together all of the electronic
 
 <a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_01.jpg?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_01.jpg?raw=true" width="50%"></a><a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_02.jpg?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/milled_case_02.jpg?raw=true" width="50%"></a>
 
-The construction of the case will be designed for outdoor use. The long term goal is to create a self contained unit that doesn't require constant maintenance and, with potentially the use of better wireless technology (like 3g), the device could theoretically be used in remote locations (ie instrumenting a fault line).
+The construction of the case will be designed for outdoor use. The long term goal is to create a self contained unit that doesn't require constant maintenance and, with the use of improved wireless technology (like 3g), the device could potentially be used in remote locations (ie instrumenting a fault line).
+
+#### Why Are We Doing This? ####
+
+We live in the Bay Area and have friends who live in other earthquake heavy regions (Japan) so this is just our way of getting involved. This is also a great project to learn about electronics, coding and industrial design.
+
+Check out [Ready.gov](http://www.ready.gov/earthquakes) for more great resources on earthquake readiness.

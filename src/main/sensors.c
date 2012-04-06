@@ -7,9 +7,23 @@
 #include "../avr/driver/uart2.h"
 #include "../avr/rprintf.h"
 
+#include "../lib/timer128.h"
+#include "../lib/simpleTime.h"
 
 #include "sensors.h"
+
+
 typedef void (*sensorQueueFn)(void);
+
+/**
+ * initiate a single cycle of data collection
+ */
+static void _sampleCycle(void);
+
+/**
+ * called every tick by internal timer
+ */
+static void _handleTick(void);
 
 static void _processBMA180(void);
 static void _processBMA180Complete(void);
@@ -19,8 +33,12 @@ static void _advanceDataPage(void);
 static void enqueueSensorFunction(sensorQueueFn fn);
 static void processSensorQueue();
 static void clearSensorQueue();
-static uint8_t isSensorQueueEmpty();
+static u08 isSensorQueueEmpty();
 
+/**
+ * true if module is currently initialized and collecting data from sensors
+ */
+static u08 _isCollectingData = false;
 
 /**
  * internal data structures
@@ -28,6 +46,65 @@ static uint8_t isSensorQueueEmpty();
 static DataBuffer gDataBuffer;
 
 
+void initSensorTimers()
+{
+	timer0Init();
+	timerAttach(TIMER0OVERFLOW_INT, _handleTick);
+	timer0SetPrescaler(TIMER_CLK_DIV1024);
+}
+
+/**
+ * counter to keep track of how many ticks have elapsed since the last second
+ */
+static u08 _realtimeClockCounter = 0;
+
+static void _handleTick(void)
+{
+	// reset counter (which has just overflowed to trigger this interrupt) to start
+	// at the proper value to scale the timer to the desired frequency (if we didn't
+	// do this the default would just be overflowing the 8bit counter (256))
+	timer0SetCounter(0); // TODO - currently using system clock; no need to set a value here
+
+	// with current 18mhz (18432000) system clock, 1024 prescale, and 256 overflow,
+	// this will get called at about 70hz
+
+	// tell real time clock to update every second
+	_realtimeClockCounter++;
+	if (_realtimeClockCounter == TIMER_TICKS_PER_SECOND) {
+		simpleTimeTickSecond();
+		_realtimeClockCounter = 0;
+	}
+
+	printf("%d\n", _realtimeClockCounter);
+
+	_sampleCycle();  // sample at 70hz
+}
+
+/**
+ * true when currently processing a sample cycle
+ */
+static u08 _inSampleCycle = false;
+
+static void _sampleCycle(void)
+{
+	if (!_isCollectingData)
+		return;
+
+	if (_inSampleCycle) // still processing previous sample cycle, skip
+		return;
+
+	_inSampleCycle = true;
+
+	processSensorQueue();
+}
+
+static void _sampleCycleComplete()
+{
+	_inSampleCycle = false;
+
+	processSensorQueue();
+
+}
 
 /**
  * setup memory buffers and IO for operation
@@ -49,15 +126,16 @@ void initSensorModule()
 
   enqueueSensorFunction(&_processBMA180);
   enqueueSensorFunction(&_advanceDataPage);
+  enqueueSensorFunction(&_sampleCycleComplete);
 
+  // initialization complete, start collecting data!
+  _isCollectingData = true;
 }
 
 void sensorMainLoop()
 {
-  printf("Start Sensor Main Loop\n");
-
   while(true) {
-    processSensorQueue();
+	  // TODO - place logic for transmitting completed data pages here
     _delay_ms(500);
   }
 }
@@ -66,7 +144,7 @@ static void _processBMA180(void)
 {
   uint8_t index = (SENSOR_ID_BMA180 * SAMPLES_PER_DATA_PAGE)+gDataBuffer.currSampleIn;
 
-  printf("BMA Sample Start\n");
+  // printf("BMA Sample Start\n");
   u08 *buffer = (u08*)&gDataBuffer.pages[gDataBuffer.currPageIn].data[index];
   bma180_ReadSensorData(buffer, _processBMA180Complete);
 }

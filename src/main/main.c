@@ -10,6 +10,8 @@
 #include "../avr/rprintf.h"
 #include "sensors.h"
 
+#include "../lib/timer128.h"
+
 static int uart_putchar (char c, FILE *stream);
 void ioinit (void);
 void uartLoopBack();
@@ -24,17 +26,17 @@ int main()
 
   stdout = &mystdout;
 
+  initSensorTimers();
+
   // enable interrupts globally
   sei();
 
   printf("\nInit Complete\n");
 
-//  bma180_test();
+  initSensorModule();
+  sensorMainLoop();
 
-//  initSensorModule();
-//  sensorMainLoop();
-
-  uartLoopBack();
+  // uartLoopBack();
 
   return 0;
 }

@@ -11,7 +11,7 @@ Currently available sensors require a computer connection (via USB) to process a
 
 #### What's in this Earthquake Sensor? ####
 
-![Sensor Components](https://github.com/gentijo/QuakeCatcher/blob/master/pics/sensors_02.jpg?raw=true "Sensor Components")
+<a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/sensors_02.jpg?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/sensors_02.jpg?raw=true" width="512" height="384" alt="Sensor Components"></a>
 
 We are hoping to make the plans of this sensor as accessible as possible. The kinds of electronics we are working with are readily available to buy online or at electronics stores and, to the electronics enthusiast, don't look that different from a list of parts in a modern smartphone:
 

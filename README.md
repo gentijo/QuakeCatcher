@@ -15,10 +15,9 @@ Currently available sensors require a computer connection (via USB) to process a
 
 We are hoping to make the plans of this sensor as accessible as possible. The kinds of electronics we are working with are readily available to buy online or at electronics stores and, to the electronics enthusiast, don't look that different from a list of parts in a modern smartphone:
 
- - [Microcontroller board](http://en.wikipedia.org/wiki/Microcontroller)
- - [MEMS-based accelerometer](http://en.wikipedia.org/wiki/Accelerometer)
- - Rechargeable battery
- - Solar Cell and rechargeable battery - currently looking at parts from [The BootstrapSolar project](http://www.bootstrapsolar.com/))
+ - [Microcontroller board](http://en.wikipedia.org/wiki/Microcontroller) - Currently using the [Bahbots Microcontroller](http://bahbots.com/)
+ - [MEMS-based accelerometer](http://en.wikipedia.org/wiki/Accelerometer) - Currently prototyping with sensors from [DSS Circuits](http://dsscircuits.com/)
+ - Solar Cell and rechargeable battery - currently looking at parts from [The BootstrapSolar project](http://www.bootstrapsolar.com/)
  - Wifi board
 
 #### Coding ####

@@ -22,6 +22,8 @@ We are hoping to make the plans of this sensor as accessible as possible. The ki
 
 #### Coding ####
 
+<a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/coding_01.jpg?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/coding_01.jpg?raw=true" width="50%"></a><a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/visualizer_01.png?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/visualizer_01.png?raw=true" width="50%">
+
 Most of the coding will be done in basic C to tie together all of the electronics components, talk to your local wifi and transmit data. We are also developing a small visualization application written in JavaScript (running on [NodeJS](https://github.com/joyent/node)) that the user can run on their local network to see what data is communicated back to the sensor network.
 
 #### Industrial Design ####

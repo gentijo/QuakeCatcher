@@ -3,6 +3,8 @@ Quake Catcher
 
 An open plan earthquake sensor that works with a quake sensor network like QCN (Stanford [Quake Catcher Network](http://qcn.stanford.edu/)).
 
+<a href="http://www.makezine.com/go/makerfaire"><img src="http://cdn.makezine.com/make/makerfaire/bayarea/2012/mf_bayarea_150X60_seeus.gif" alt="See us at Maker Faire!" width="150" height="60" border="0" /></a>
+
 #### What's an Earthquake Sensor? ####
 
 Accelerometer based earthquake sensors are small devices installed across a large geographic area that send high resolution seismographic data (or vibrations from the ground) to a quake sensor network forming a network analogous to the human nervous system. The central servers look for spikes in readings in real time and with enough sensors, earthquakes can be measured with tremendous precision and speed. 

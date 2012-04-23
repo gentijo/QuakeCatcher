@@ -84,11 +84,10 @@ var gio = io.of('/gio').on('connection', function(socket) {
 // TODO: remove this once we're ready to take in live data
 // Randomly generated data
 setInterval(function() {
-	var ONE_G = 8000; // Agreed upon value for one G force
 	gio.emit('gio', {
-		x: Math.floor(Math.random()*100 / ONE_G),
-		y: -7000 - Math.floor(Math.random()*1000 / ONE_G),
-		z: Math.floor(Math.random()*100 / ONE_G)
+		x: Math.floor(Math.random()*1000),
+		y: Math.floor(-7000 - Math.random()*1000),
+		z: Math.floor(Math.random()*1000)
 	});
 }, 200);
 

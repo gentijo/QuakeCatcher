@@ -1,18 +1,26 @@
 /**
  Web server that serves up visualization code for quack catcher network
 
- 1) Install NodeJS: https://github.com/joyent/node/wiki/Installation
- 2) run from cmd line: 'node vizserver.js'
+ 1) Install NodeJS: http://nodejs.org/#download
+ 2) npm install socket.io
+ 3) npm install serialport
+ 4) run from cmd line: 'node vizserver.js'
 
  **/
 
 var webport = 8124;
 var dataport = 8125;
+var serialPath = "/dev/tty.SLAB_USBtoUART";
 
 var http = require('http');
 var net = require('net');
 var path = require('path');
 var fs = require('fs');
+var SerialPort = require("serialport");
+
+/** 
+ Create Web Server
+ **/
 
 var contentTypes = { '.js'	: 'text/javascript'
 	, '.html'	: 'text/html'
@@ -28,7 +36,7 @@ function getContentType(path) {
 	var extname = path.extname(path);
 }
 
-http.createServer(function (req, res) {
+function handler(req, res) {
 	var filepath = '.' + req.url;
 	if(filepath == './') {
 		filepath = './index.html';
@@ -53,8 +61,36 @@ http.createServer(function (req, res) {
 			res.end('Hello There!\n');
 		}
 	})
-}).listen(webport, "127.0.0.1");
-console.log('Web Server running at http://127.0.0.1:8124/');
+}
+var server = http.createServer(handler).listen(webport, "127.0.0.1");
+console.log('Web Server running at http://127.0.0.1:' + webport + '/');
+
+/**
+ Create WebSocket for pushing data to visualizer
+ Socket will be available at ://localhost:webport/gio
+ **/
+
+var io = require('socket.io').listen(server);
+var gio = io.of('/gio').on('connection', function(socket) {
+	socket.emit('gio', {
+		online: 'online'
+	});
+	socket.on('sync', function(data) {
+		console.log(data);
+	});
+});
+
+
+// TODO: remove this once we're ready to take in live data
+// Randomly generated data
+setInterval(function() {
+	var ONE_G = 8000; // Agreed upon value for one G force
+	gio.emit('gio', {
+		x: Math.floor(Math.random()*100 / ONE_G),
+		y: -7000 - Math.floor(Math.random()*1000 / ONE_G),
+		z: Math.floor(Math.random()*100 / ONE_G)
+	});
+}, 200);
 
 /**
  Network server that listens for a stream of data
@@ -72,3 +108,27 @@ net.createServer(function (c) {
 	})
 }).listen(dataport, '127.0.0.1');
 console.log('Data Server listening on 127.0.0.1:8125');
+
+/**
+ Serial Port Listener for debugging frame packers from sensor
+ **/
+
+try {
+	var serialPort = new SerialPort.SerialPort(serialPath, { parser: SerialPort.parsers.readline("\n") });
+
+	serialPort.on("data", function(data) {
+		// The assumed format are three hex numbers representing x, y and z
+		// example: data = '0035F0230045';
+		console.log("Chunk received: " + data.toString());
+		data = data.toString();
+		var x = parseInt('0x0000' + data.substr(0,4),16);
+		var y = parseInt('0x0000' + data.substr(4,4),16);
+		var z = parseInt('0x0000' + data.substr(8,4),16);
+		console.log("chunk: ", x, y, z);
+		//sys.puts('.');
+	}).on("error", function(msg) {
+		console.log('Serial Port Error: ' + msg);
+	});
+} catch(e) {
+	console.log('Serial Port Exception: ' + e.toString());
+}

@@ -1,0 +1,473 @@
+<!doctype html>
+<!--
+
+	Project GIO Visualizer
+	
+	
+	More Information: https://github.com/gentijo/QuakeCatcher/wiki
+
+-->
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body, html {
+			background:#fff;
+			color:#000;
+			padding:0;
+			margin:0;
+			overflow:hidden;
+			font-family:georgia;
+			text-align:center;
+			height: 100%;
+		}
+		a {
+			color: skyblue
+		}
+		.container {
+			position: relative;
+			top: 0px;
+			left: 0px;
+			border: 1px solid green;
+		}
+		canvas {
+			pointer-events: none;
+			z-index: 10;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+		}
+		#log {
+			position: absolute;
+			top: 50px;
+			text-align: left;
+			display: block;
+			z-index: 100
+		}
+		#d {
+			text-align: center;
+			margin: 1em 0 0 0;
+			z-index: 0;
+			position: absolute;
+			width: 100%;
+			display: block
+		}
+		.button {
+			background: orange;
+			color: #fff;
+			padding: 0.2em 0.5em;
+			cursor: pointer
+		}
+		.inactive {
+			background: #999;
+			color: #eee
+		}
+
+		.rule line {
+			stroke: #eee;
+			shape-rendering: crispEdges;
+		}
+
+		.line {
+			fill: none;
+			stroke: steelblue;
+			stroke-width: 1.5px;
+		}
+		.x { stroke: #CE2626; }
+		.y { stroke: #51B863; }
+		.z { stroke: #0936AC; }
+		#graph {
+			position: absolute;
+			bottom: 20px;
+			z-index: 1000;
+			width: 100%;
+		}
+	</style>
+</head>
+<body>
+	<pre id="log"></pre>
+	<div id="graph"></div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="Three.js" type="text/javascript" charset="utf-8"></script>
+	<script src="RequestAnimationFrame.js" type="text/javascript" charset="utf-8"></script>
+	<script src="Stats.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+	<script>
+		/**
+		 Create socket to receive data
+		 **/
+	
+		var socket = io.connect('/gio');
+		var gioData = { x: 1, y: 1, z: 1 };
+		var gioTS = new Date().getTime();
+
+		socket.on('gio', function (data) {
+			//console.log(data);
+			if(data.x && data.y && data.z) {
+				gioData.x = data.x;
+				gioData.y = data.y;
+				gioData.z = data.z;
+				gioTS = new Date().getTime();
+			}
+		});
+	
+		/**
+		 ThreeJS/WebGL code to render visual representation of accelerometer data.
+		 **/
+
+		var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+		var FLOOR = -250;
+
+		var container, stats;
+
+		var camera, scene, canvasRenderer, webglRenderer;
+
+		var loader;
+
+		var mesh, zmesh, lightMesh;
+		
+		var axes;
+
+		var directionalLight, pointLight, spotLight;
+
+		var mouseX = 0, mouseY = 0;
+
+		var windowHalfX = window.innerWidth / 2;
+		var windowHalfY = window.innerHeight / 2;
+
+		var has_gl = 0;
+
+		var VIEW_ANGLE = 23,
+		    ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT,
+		    NEAR = 5,
+		    FAR = 3000;
+
+		var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 1024;
+		var ARROW_THICKNESS = 100;
+		var ARROW_LENGTH = 200;
+		var ONE_G = 8000; // One G force
+		
+		var enable3D = true; // TODO: toggle between 3d modes
+
+		if(enable3D) {
+			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+			init();
+			animate();
+		}
+		
+		function init() {
+			container = document.createElement( 'div' );
+			container.className = 'container'
+			document.body.appendChild( container );
+			
+			scene = new THREE.Scene();
+
+			// CAMERA
+
+			camera = new THREE.PerspectiveCamera(
+				VIEW_ANGLE,
+				ASPECT,
+				NEAR,
+				FAR );
+			camera.position.set( 700, 50, 1900);
+			scene.add(camera);
+			
+			// LIGHTS
+
+			var ambient = new THREE.AmbientLight( 0x444444 );
+			scene.add( ambient );
+
+			directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+			directionalLight.position.set( 1, 1, 2 ).normalize();
+			scene.add( directionalLight );
+
+			pointLight = new THREE.PointLight( 0xffaa00, 0.8 );
+			pointLight.position.set( 0, 0, 0 );
+			scene.add( pointLight );
+
+			spotLight = new THREE.SpotLight();
+			spotLight.position.set(0,1500,1000);
+			spotLight.target.position.set(0, 0, 0);
+			spotLight.castShadow = true;
+			scene.add(spotLight)
+
+			// light representation
+
+			sphere = new THREE.SphereGeometry( 100, 16, 8, 1 );
+			lightMesh = new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xffaa00 } ) );
+			lightMesh.scale.set( 0.05, 0.05, 0.05 );
+			lightMesh.position = pointLight.position;
+			scene.add( lightMesh );
+			
+			try {
+
+				webglRenderer = new THREE.WebGLRenderer( { antialias: true, clearAlpha: 1 } );
+				webglRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+				webglRenderer.domElement.style.position = "relative";
+				webglRenderer.setClearColorHex(0xEEEEEE, 1.0);
+				
+				// Shadows
+				webglRenderer.shadowMapBias = 0.0039;
+				webglRenderer.shadowMapDarkness = 0.5;
+				webglRenderer.shadowMapWidth = SHADOW_MAP_WIDTH;
+				webglRenderer.shadowMapHeight = SHADOW_MAP_HEIGHT;
+				
+				webglRenderer.shadowMapEnabled = true;
+				webglRenderer.shadowMapSoft = true;
+				container.appendChild( webglRenderer.domElement );
+				has_gl = 1;
+
+			}
+			catch (e) {
+			}
+
+			stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.top = '0px';
+			stats.domElement.style.zIndex = 100;
+			container.appendChild( stats.domElement );
+			
+			createMeasureScene();
+		}
+		
+		function createMeasureScene() {
+			
+			var xBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_LENGTH,ARROW_THICKNESS,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0xCE2626}));
+			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x51B863}));
+			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x0936AC}));
+
+			scene.add(xBox);
+			scene.add(yBox);
+			scene.add(zBox);
+			
+			axes = {
+				x: xBox,
+				y: yBox,
+				z: zBox
+			}			
+		}
+
+		function addMesh( geometry, scale, x, y, z, rx, ry, rz, material ) {
+
+			mesh = new THREE.Mesh( geometry, material );
+
+			mesh.scale.set( scale, scale, scale );
+			mesh.position.set( x, y, z );
+			mesh.rotation.set( rx, ry, rz );
+			
+			mesh.castShadow = true;
+			//mesh.receiveShadow = true;
+
+			scene.add( mesh );
+
+			return mesh;
+		}
+		
+		function createScene(geometry, start) {
+			// common material parameters
+
+			var ambient = 0x050505, diffuse = 0x331100, specular = 0xffffff, shininess = 10, scale = 23;
+
+			// normal map shader
+
+			var shader = THREE.ShaderUtils.lib[ "normal" ];
+			var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+
+			uniforms[ "enableAO" ].value = true;
+			uniforms[ "enableDiffuse" ].value = false;
+			uniforms[ "enableSpecular" ].value = false;
+			uniforms[ "enableReflection" ].value = false;
+
+			uniforms[ "uDiffuseColor" ].value.setHex( diffuse );
+			uniforms[ "uSpecularColor" ].value.setHex( specular );
+			uniforms[ "uAmbientColor" ].value.setHex( ambient );
+
+			uniforms[ "uShininess" ].value = shininess;
+
+			var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms, lights: true, fog: false };
+			var material1 = new THREE.ShaderMaterial( parameters );
+
+			var scale = 2;
+			robot = addMesh(geometry, scale, 0,0,0, 0,0,0, new THREE.MeshLambertMaterial(
+			{
+			    color: 0xA4C639
+			}) );
+			
+			geometry.computeBoundingBox();
+
+			// floor
+			var planeGeo = new THREE.PlaneGeometry(100, 100);
+			var planeMat = new THREE.MeshLambertMaterial({color: 0xffdd99});
+			var plane = new THREE.Mesh(planeGeo, planeMat);
+			plane.rotation.x = -Math.PI/2;
+			plane.position.y = geometry.boundingBox.y[0] * scale;
+			plane.scale.set(100, 100, 100);
+			
+			plane.castShadow = false;
+			plane.receiveShadow = true;
+			scene.add(plane);		
+
+			loader.statusDomElement.style.display = "none";
+
+			log( "geometry.vertices: " + geometry.vertices.length );
+			log( "geometry.faces: " + geometry.faces.length );
+
+			log( "model loaded and created in " + ( Date.now() - start ) + " ms" );
+		}
+		
+		function animate() {
+			requestAnimationFrame(animate);
+			render();
+			stats.update();
+		}
+
+		function log( text ) {
+
+			var e = document.getElementById( "log" );
+			e.innerHTML = text + "<br/>" + e.innerHTML;
+
+		}
+				
+		var r=0;
+		
+		function render() {
+			var movementMultiplier = 3;
+			
+			camera.position.x += ( mouseX*movementMultiplier - camera.position.x) * .05;
+			camera.position.y += ( - mouseY*movementMultiplier - camera.position.y) * .05;
+			
+			camera.lookAt(scene.position);
+
+			lightMesh.position.x = 700 * Math.cos(r);
+			lightMesh.position.z = 700 * Math.sin(r);
+
+			if(new Date().getTime() - gioTS > 200 && false) {
+				// TODO: Determine smoothing function
+				axes.x.scale.x = Math.max(axes.x.scale.x-0.01,0);
+				axes.y.scale.y = Math.max(axes.y.scale.y-0.01,0);
+				axes.z.scale.z = Math.max(axes.z.scale.z-0.01,0);
+			} else {
+				axes.x.scale.x = Math.abs(gioData.x) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.x.position.x = gioData.x / ONE_G * (ARROW_LENGTH/2);
+				axes.y.scale.y = Math.abs(gioData.y) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.y.position.y = gioData.y / ONE_G * (ARROW_LENGTH/2);
+				axes.z.scale.z = Math.abs(gioData.z) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.z.position.z = gioData.z / ONE_G * (ARROW_LENGTH/2);
+			}
+			
+			r+=0.01
+
+			webglRenderer.render(scene, camera);
+		}
+		
+		function onDocumentMouseMove(event) {
+			mouseX = (event.clientX - windowHalfX);
+			mouseY = (event.clientY - windowHalfY);
+		}
+	</script>
+	
+	<<script type="text/javascript" charset="utf-8">
+		var rate = 200,
+		// The scroll and update speed of the graph (ms)
+		points = 50,
+		// The number of points to generate
+		width = window.innerWidth,
+		// Chart width
+		height = 275,
+		// Chart height
+		padding = 40,
+		// Visual padding for the axis labels
+		updates = 0,
+		x = d3.scale.linear().domain([-1, 1]).range([0, width - padding * 2]),
+		y = d3.scale.linear().domain([-1, 1]).range([height, 0]),
+		axesNames = ['x','y','z'];
+
+		function _getData(axis) {
+			return d3.range(points + 2).map(function(i) {
+				return _getDataPoint(axis, i);
+			})
+		}
+		
+		function _getDataPoint(axis, i) {
+			return {
+				x: (i) / points,
+				y: gioData[axis] / ONE_G
+			}
+		}
+
+		var data = [_getData('x'), _getData('y'),_getData('z')]
+
+		var line = d3.svg.line()
+			.interpolate('basis')
+			.x(function(d) { return x(d.x - updates/points); })
+			.y(function(d) { return y(d.y); });
+
+		var chart = d3.select("#graph")
+			.append("svg:svg")
+			.attr("width", width + padding * 2)
+			.attr("height", height + padding * 2)
+			.append("svg:g")
+			.attr("transform", "translate(" + padding + "," + padding + ")")
+			.data(data)
+			
+		// Creating rules for the background grid.
+		var rules = chart.selectAll("g.rule")
+			.data(x.ticks(10))
+			.enter()
+			.append("svg:g")
+			.attr("class", "rule")
+
+		// X-axis lines
+		rules
+			.append("svg:line")
+			.attr("x1", x)
+			.attr("x2", x)
+			.attr("y1", 0)
+			.attr("y2", height)
+
+		// Y-axis labels
+		rules
+			.append("svg:text")
+			.attr("y", y)
+			.attr("x", -5)
+			.attr("dy", ".35em")
+			.attr("text-anchor", "end")
+			.attr("class", "y")
+			.text(x.tickFormat(10))
+			
+		// Create Paths
+		chart.selectAll('path')
+			.data(data)
+			.enter()
+			.append("svg:path")
+			.attr("class", function(d, i) { return ("line " + axesNames[i]); })
+			.attr("d", line)
+			
+		function updatePaths() {
+			for (var i=0; i < data.length; i++) {
+				data[i].push(_getDataPoint(axesNames[i], data[i].length))
+			}
+			
+			chart.selectAll('path')
+				.data(data)
+				.transition()
+				.duration(rate)
+				.ease("linear")
+				.attr("d", line)
+
+			updates++;
+		}
+
+		function onResize() {
+			x = d3.scale.linear().domain([0, 1]).range([0, window.innerWidth - padding * 2]);
+			chart.selectAll('text.x').attr("x", x);
+		}
+
+		window.setInterval(updatePaths, rate)
+		window.addEventListener('resize', onResize, false);
+
+	</script>>
+</body>
+</html>

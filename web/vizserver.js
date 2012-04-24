@@ -83,7 +83,7 @@ var gio = io.of('/gio').on('connection', function(socket) {
 
 // TODO: remove this once we're ready to take in live data
 // Randomly generated data
-setInterval(function() {
+var sampleDataInterval = setInterval(function() {
 	gio.emit('gio', {
 		x: Math.floor(Math.random()*1000),
 		y: Math.floor(-7000 - Math.random()*1000),
@@ -109,7 +109,7 @@ net.createServer(function (c) {
 console.log('Data Server listening on 127.0.0.1:8125');
 
 /**
- Serial Port Listener for debugging frame packers from sensor
+ Serial Port Listener for debugging frame packets from sensor
  **/
 
 try {
@@ -123,11 +123,20 @@ try {
 		var x = parseInt('0x0000' + data.substr(0,4),16);
 		var y = parseInt('0x0000' + data.substr(4,4),16);
 		var z = parseInt('0x0000' + data.substr(8,4),16);
-		console.log("chunk: ", x, y, z);
+		console.log("Interpreted accelerometer values: ", x, y, z);
+
+		// Emit data
+		gio.emit('gio', {
+			x: x,
+			y: y,
+			z: z
+		});
+		
 		//sys.puts('.');
 	}).on("error", function(msg) {
 		console.log('Serial Port Error: ' + msg);
 	});
+	clearInterval(sampleDataInterval); // Stop the sample data generator
 } catch(e) {
 	console.log('Serial Port Exception: ' + e.toString());
 }

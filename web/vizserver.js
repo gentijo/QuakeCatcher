@@ -10,6 +10,7 @@
 
 var webport = 8124;
 var dataport = 8125;
+var hostname = process.argv[2] || '127.0.0.1';
 var serialPath = "/dev/tty.SLAB_USBtoUART";
 
 var http = require('http');
@@ -80,8 +81,8 @@ function handler(req, res) {
 		}
 	})
 }
-var server = http.createServer(handler).listen(webport, "127.0.0.1");
-console.log('Web Server running at http://127.0.0.1:' + webport + '/');
+var server = http.createServer(handler).listen(webport, hostname);
+console.log('Web Server running at http://' + hostname + ':' + webport + '/');
 
 /**
  Create WebSocket for pushing data to visualizer
@@ -123,8 +124,8 @@ net.createServer(function (c) {
 	c.on('end', function() {
 		console.log('Connection Ended');
 	})
-}).listen(dataport, '127.0.0.1');
-console.log('Data Server listening on 127.0.0.1:8125');
+}).listen(dataport, hostname);
+console.log('Data Server listening on ' + hostname + ':8125');
 
 /**
  Serial Port Listener for debugging frame packets from sensor

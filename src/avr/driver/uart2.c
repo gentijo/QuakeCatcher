@@ -1,3 +1,9 @@
+// uart2.c
+// -------
+// adapted from original source
+// attribution below
+
+
 /*! \file uart2.c \brief Dual UART driver with buffer support. */
 //*****************************************************************************
 //
@@ -24,9 +30,22 @@
 #include "../buffer.h"
 #include "uart2.h"
 
+#ifndef CRITICAL_SECTION_START
+#define CRITICAL_SECTION_START	unsigned char _sreg = SREG; cli()
+#define CRITICAL_SECTION_END	SREG = _sreg
+#endif
+
 // UART global variables
 // flag variables
+/**
+ * flag for serializing unbuffered sending (e.g. uartSendByte)
+ * when the flag is false, it means that a byte is currently being sent
+ */
 volatile u08   uartReadyTx[2];
+/**
+ * flag to indicate when a buffered send is currently in progress; note
+ * that these values should only be accessed when interrupts are disabled
+ */
 volatile u08   uartBufferedTx[2];
 // receive and transmit buffers
 cBuffer uartRxBuffer[2];
@@ -35,10 +54,10 @@ unsigned short uartRxOverflow[2];
 #ifndef UART_BUFFER_EXTERNAL_RAM
 	// using internal ram,
 	// automatically allocate space in ram for each buffer
-	static char uart0RxData[UART0_RX_BUFFER_SIZE];
-	static char uart0TxData[UART0_TX_BUFFER_SIZE];
-	static char uart1RxData[UART1_RX_BUFFER_SIZE];
-	static char uart1TxData[UART1_TX_BUFFER_SIZE];
+	static u08 uart0RxData[UART0_RX_BUFFER_SIZE];
+	static u08 uart0TxData[UART0_TX_BUFFER_SIZE];
+	static u08 uart1RxData[UART1_RX_BUFFER_SIZE];
+	static u08 uart1TxData[UART1_TX_BUFFER_SIZE];
 #endif
 
 typedef void (*voidFuncPtru08)(unsigned char);
@@ -93,8 +112,8 @@ void uart0InitBuffers(void)
 {
 	#ifndef UART_BUFFER_EXTERNAL_RAM
 		// initialize the UART0 buffers
-		bufferInit(&uartRxBuffer[0], uart0RxData, UART0_RX_BUFFER_SIZE);
-		bufferInit(&uartTxBuffer[0], uart0TxData, UART0_TX_BUFFER_SIZE);
+		bufferInit(&uartRxBuffer[0], (u08*) uart0RxData, UART0_RX_BUFFER_SIZE);
+		bufferInit(&uartTxBuffer[0], (u08*) uart0TxData, UART0_TX_BUFFER_SIZE);
 	#else
 		// initialize the UART0 buffers
 		bufferInit(&uartRxBuffer[0], (u08*) UART0_RX_BUFFER_ADDR, UART0_RX_BUFFER_SIZE);
@@ -106,8 +125,8 @@ void uart1InitBuffers(void)
 {
 	#ifndef UART_BUFFER_EXTERNAL_RAM
 		// initialize the UART1 buffers
-		bufferInit(&uartRxBuffer[1], uart1RxData, UART1_RX_BUFFER_SIZE);
-		bufferInit(&uartTxBuffer[1], uart1TxData, UART1_TX_BUFFER_SIZE);
+		bufferInit(&uartRxBuffer[1], (u08*) uart1RxData, UART1_RX_BUFFER_SIZE);
+		bufferInit(&uartTxBuffer[1], (u08*) uart1TxData, UART1_TX_BUFFER_SIZE);
 	#else
 		// initialize the UART1 buffers
 		bufferInit(&uartRxBuffer[1], (u08*) UART1_RX_BUFFER_ADDR, UART1_RX_BUFFER_SIZE);
@@ -160,7 +179,8 @@ cBuffer* uartGetTxBuffer(u08 nUart)
 void uartSendByte(u08 nUart, u08 txData)
 {
 	// wait for the transmitter to be ready
-//	while(!uartReadyTx[nUart]);
+	while(!uartReadyTx[nUart]);
+
 	// send byte
 	if(nUart)
 	{
@@ -257,40 +277,57 @@ void uart1AddToTxBuffer(u08 data)
 
 void uartSendTxBuffer(u08 nUart)
 {
-	// turn on buffered transmit
-	uartBufferedTx[nUart] = TRUE;
-	// send the first byte to get things going by interrupts
-	uartSendByte(nUart, bufferGetFromFront(&uartTxBuffer[nUart]));
+	// this will always be called after buffer is added to
+
+	u08 doSend = FALSE;
+
+	CRITICAL_SECTION_START;
+
+	if (uartTxBuffer[nUart].datalength > 0 && !uartBufferedTx[nUart])
+	{
+		doSend = TRUE;
+		uartBufferedTx[nUart] = TRUE;
+	}
+
+	CRITICAL_SECTION_END;
+
+	if (doSend)
+	{
+		// send the first byte to get things going by interrupts
+		uartSendByte(nUart, bufferGetFromFront(&uartTxBuffer[nUart]));
+	}
 }
 
 u08 uartSendBuffer(u08 nUart, char *buffer, u16 nBytes)
 {
 	register u08 first;
 	register u16 i;
+	u08 result = FALSE;
+
+	CRITICAL_SECTION_START;
 
 	// check if there's space (and that we have any bytes to send at all)
 	if((uartTxBuffer[nUart].datalength + nBytes < uartTxBuffer[nUart].size) && nBytes)
 	{
-		// grab first character
-		first = *buffer++;
 		// copy user buffer to uart transmit buffer
-		for(i = 0; i < nBytes-1; i++)
+		for(i = 0; i < nBytes; i++)
 		{
 			// put data bytes at end of buffer
 			bufferAddToEnd(&uartTxBuffer[nUart], *buffer++);
 		}
 
-		// send the first byte to get things going by interrupts
-		uartBufferedTx[nUart] = TRUE;
-		uartSendByte(nUart, first);
 		// return success
-		return TRUE;
+		result = TRUE;
 	}
-	else
+
+	CRITICAL_SECTION_END;
+
+	if (result)
 	{
-		// return failure
-		return FALSE;
+		uartSendTxBuffer(nUart);
 	}
+
+	return result;
 }
 
 // UART Transmit Complete Interrupt Function

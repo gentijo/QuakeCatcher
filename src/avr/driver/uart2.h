@@ -1,3 +1,8 @@
+// uart2.h
+// -------
+// adapted from original source
+// attribution below
+
 /*! \file uart2.h \brief Dual UART driver with buffer support. */
 //*****************************************************************************
 //

@@ -41,6 +41,24 @@ function handler(req, res) {
 	if(filepath == './') {
 		filepath = './index.html';
 	}
+
+	if(req.method == 'POST') {
+		console.log('POST START');
+		req.on('data', function(chunk) {
+			console.log('RECEIVED CHUNK', chunk.toString());
+		});
+		
+		req.on('end', function() {
+			console.log('POST END');
+			res.writeHead(200, {'Content-Type': 'text/plain'});
+			res.end('Post Received\n');
+		});
+		
+		req.on('close', function() {
+			console.log('POST CLOSED');
+		});
+		return;
+	}
 	
 	// Check for static content
 	path.exists(filepath, function(exists) {

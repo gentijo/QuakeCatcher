@@ -50,9 +50,9 @@ static DataBuffer gDataBuffer;
 
 void initSensorTimers()
 {
-	timer0Init();
-	timerAttach(TIMER0OVERFLOW_INT, _handleTick);
-	timer0SetPrescaler(TIMER_CLK_DIV1024);
+	timer2Init();
+	timerAttach(TIMER2OVERFLOW_INT, _handleTick);
+	timer2SetPrescaler(TIMER2_CLK_DIV1);
 }
 
 /**
@@ -65,10 +65,10 @@ static void _handleTick(void)
 	// reset counter (which has just overflowed to trigger this interrupt) to start
 	// at the proper value to scale the timer to the desired frequency (if we didn't
 	// do this the default would just be overflowing the 8bit counter (256))
-	timer0SetCounter(0); // TODO - currently using system clock; no need to set a value here
+	timer2SetCounter(128);
 
-	// with current 18mhz (18432000) system clock, 1024 prescale, and 256 overflow,
-	// this will get called at about 70hz
+	// with current 32kHz crystal, no prescale, and 128 overflow,
+	// this will get called at 256Hz
 
 	// tell real time clock to update every second
 	_realtimeClockCounter++;
@@ -77,7 +77,9 @@ static void _handleTick(void)
 		_realtimeClockCounter = 0;
 	}
 
-	_sampleCycle();
+	// 256/5 ~= 51Hz sampling rate
+	if (_realtimeClockCounter % 5 == 0)
+		_sampleCycle();
 }
 
 /**

@@ -134,10 +134,21 @@
 #define TIMER_CLK_T_RISE		0x07	///< Timer clocked at T rising edge
 #define TIMER_PRESCALE_MASK		0x07	///< Timer Prescaler Bit-Mask
 
+#define TIMER2_CLK_STOP			0x00	///< Timer Stopped
+#define TIMER2_CLK_DIV1			0x01	///< Timer clocked at F_CPU
+#define TIMER2_CLK_DIV8			0x02	///< Timer clocked at F_CPU/8
+#define TIMER2_CLK_DIV32		0x03	///< Timer clocked at F_CPU/64
+#define TIMER2_CLK_DIV64		0x04	///< Timer clocked at F_CPU/256
+#define TIMER2_CLK_DIV128		0x05	///< Timer clocked at F_CPU/1024
+#define TIMER2_CLK_DIV256		0x06	///< Timer clocked at T falling edge
+#define TIMER2_CLK_DIV1024		0x07	///< Timer clocked at T rising edge
+
+
 // default prescale settings for the timers
 // these settings are applied when you call
 // timerInit or any of the timer<x>Init
 #define TIMER0PRESCALE		TIMER_CLK_DIV1024	///< timer 0 prescaler default
+#define TIMER2PRESCALE		TIMER2_CLK_DIV1		///< timer 2 prescaler default
 
 // interrupt macros for attaching user functions to timer interrupts
 // use these with timerAttach( intNum, function )
@@ -172,7 +183,13 @@
 // default initialization routines for each timer
 void timer0Init(void);
 
+/**
+ * initialize timer 2 for external 32kHz crystal
+ */
+void timer2Init(void);
+
 void timer0SetCounter(u08 value);
+void timer2SetCounter(u08 value);
 
 // Clock prescaler set/get commands for each timer/counter
 // For setting the prescaler, you should use one of the #defines
@@ -182,6 +199,9 @@ void timer0SetCounter(u08 value);
 // will be the [x] division value currently set.
 void timer0SetPrescaler(u08 prescale);		///< set timer0 prescaler division index
 u16  timer0GetPrescaler(void);				///< get timer0 prescaler division rate
+
+void timer2SetPrescaler(u08 prescale);		///< set timer0 prescaler division index
+u16  timer2GetPrescaler(void);				///< get timer0 prescaler division rate
 
 
 // TimerAttach and Detach commands

@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <string.h>
 #include <stdio.h>
 #include <util/delay.h>
 #include "../avr/driver/i2c.h"
@@ -28,6 +29,7 @@ static void _handleTick(void);
 static void _processBMA180(void);
 static void _processBMA180Complete(void);
 static void _advanceDataPage(void);
+static void _transmitPage(u08 pageIn);
 
 
 static void enqueueSensorFunction(sensorQueueFn fn);
@@ -75,9 +77,7 @@ static void _handleTick(void)
 		_realtimeClockCounter = 0;
 	}
 
-	printf("%d\n", _realtimeClockCounter);
-
-	_sampleCycle();  // sample at 70hz
+	_sampleCycle();
 }
 
 /**
@@ -118,7 +118,6 @@ void initSensorModule()
   // Initialize the Data Buffer.
   gDataBuffer.currPageIn = 0;
   gDataBuffer.currSampleIn = 0;
-  gDataBuffer.currPageOut = 0;
   for (uint8_t i=0; i<NUM_DATA_PAGES; i++) {
     gDataBuffer.pages[i].numReadings = 0;
     gDataBuffer.pages[i].lockForSending = false;
@@ -134,94 +133,107 @@ void initSensorModule()
 
 void sensorMainLoop()
 {
-  while(true) {
-	  // TODO - place logic for transmitting completed data pages here
-    _delay_ms(500);
-  }
+	while (true)
+	{
+		// find a filled page that's ready to be transmitted
+		u08 filledPageIn = PAGE_INDEX_UNAVAILABLE;
+		for (u08 i=0; i<NUM_DATA_PAGES; i++)
+		{
+			if (gDataBuffer.pages[i].numReadings == SAMPLES_PER_DATA_PAGE)
+			{
+				filledPageIn = i;
+				break;
+			}
+		}
+
+		if (filledPageIn != PAGE_INDEX_UNAVAILABLE)
+			_transmitPage(filledPageIn);
+
+		_delay_ms(100);
+	}
+}
+
+static void _transmitPage(u08 pageIn)
+{
+	gDataBuffer.pages[pageIn].lockForSending = TRUE;
+
+	uint16_t x, y, z;
+
+	for (u08 i=0; i<SAMPLES_PER_DATA_PAGE; i++)
+	{
+		u08 offsetIn = (SENSOR_ID_BMA180 * SAMPLES_PER_DATA_PAGE)+i;
+		u08 *buffer = (u08*)&gDataBuffer.pages[pageIn].data[offsetIn];
+
+		x = buffer[1]<<8|buffer[0];
+
+		y = buffer[3]<<8|buffer[2];
+
+		z = buffer[5]<<8|buffer[4];
+
+		char output[50];
+		sprintf(output, "%d,%d,%d\r\n", x, y, z);
+		uartSendBuffer(0, output, strlen(output));
+	}
+
+	gDataBuffer.pages[pageIn].numReadings = 0;
+	gDataBuffer.pages[pageIn].lockForSending = FALSE;
 }
 
 static void _processBMA180(void)
 {
-  uint8_t index = (SENSOR_ID_BMA180 * SAMPLES_PER_DATA_PAGE)+gDataBuffer.currSampleIn;
+	if (gDataBuffer.currPageIn == PAGE_INDEX_UNAVAILABLE)
+	{
+		// all data pages are filled, so we'll need to drop this data sample
+		processSensorQueue();
+		return;
+	}
 
-  // printf("BMA Sample Start\n");
-  u08 *buffer = (u08*)&gDataBuffer.pages[gDataBuffer.currPageIn].data[index];
-  bma180_ReadSensorData(buffer, _processBMA180Complete);
+	uint8_t index = (SENSOR_ID_BMA180 * SAMPLES_PER_DATA_PAGE)+gDataBuffer.currSampleIn;
+
+	// printf("BMA Sample Start\n");
+	u08 *buffer = (u08*)&gDataBuffer.pages[gDataBuffer.currPageIn].data[index];
+	bma180_ReadSensorData(buffer, _processBMA180Complete);
 }
 
 static void _processBMA180Complete(void)
 {
-  uint16_t x, y, z;
-
-  uint8_t index = (SENSOR_ID_BMA180 * SAMPLES_PER_DATA_PAGE)+gDataBuffer.currSampleIn;
-  u08 *buffer = (u08*)&gDataBuffer.pages[gDataBuffer.currPageIn].data[index];
-
-  x = buffer[1]<<8|buffer[0];
-  x = x >> 2;
-
-  y = buffer[3]<<8|buffer[2];
-  y = y >> 2;
-
-  z = buffer[5]<<8|buffer[4];
-  z= z >> 2;
-
-  printf("BMA180 - X=%d, Y=%d, Z=%d\n", x, y, z);
-
-  processSensorQueue();
+	processSensorQueue();
 }
 
 static void _advanceDataPage(void)
 {
-  gDataBuffer.currSampleIn++;
-  if (gDataBuffer.currSampleIn > SAMPLES_PER_DATA_PAGE)
-  {
-      gDataBuffer.currSampleIn = 0;
-      gDataBuffer.currPageIn++;
-      if (gDataBuffer.currPageIn > NUM_DATA_PAGES)
-      {
-          gDataBuffer.currPageIn = 0;
-      }
-  }
+	if (gDataBuffer.pages[gDataBuffer.currPageIn].numReadings == SAMPLES_PER_DATA_PAGE)
+	{
+		// find next free page
+		u08 freePage = PAGE_INDEX_UNAVAILABLE;
+		for (u08 i=0; i<NUM_DATA_PAGES; i++)
+		{
+			if (gDataBuffer.pages[i].numReadings == 0 && !gDataBuffer.pages[i].lockForSending)
+			{
+				freePage = i;
+				break;
+			}
+		}
 
-  printf("Advance data Page %d, Sample %d\n", gDataBuffer.currPageIn, gDataBuffer.currSampleIn);
+		gDataBuffer.currPageIn = freePage;
 
-  processSensorQueue();
-}
-
-/*
-static void _saveSensorSample(uint8_t *data, uint8_t sensorId)
-{
-	// Find the next open page to record this data into
-	uint8_t pagesTried = 0;
-	uint8_t startingPage = gDataBuffer.currPage;
-	while (gDataBuffer.pages[gDataBuffer.currPage].lockForSending || gDataBuffer.pages[gDataBuffer.currPage].numReadings == SAMPLES_PER_DATA_PAGE) {
-		gDataBuffer.currPage = (gDataBuffer.currPage + 1) % NUM_DATA_PAGES;
-		pagesTried++;
-		if (pagesTried == NUM_DATA_PAGES) {
-			// all pages currently filled or in-use... drop data
-			return;
+		// init the new data page if necessary
+		if (gDataBuffer.currPageIn != PAGE_INDEX_UNAVAILABLE)
+		{
+			gDataBuffer.currSampleIn = 0;
+			gDataBuffer.pages[gDataBuffer.currPageIn].numReadings = 0;
 		}
 	}
-
-	// init the new data page if necessary
-	if (startingPage != gDataBuffer.currPage) {
-		gDataBuffer.pages[gDataBuffer.currPage].numReadings = 0;
-		// TODO - set start time for page
-		rprintf("started filling page %d\n", gDataBuffer.currPage);
-		uartSendTxBuffer(0);
+	else
+	{
+		gDataBuffer.currSampleIn++;
+		gDataBuffer.pages[gDataBuffer.currPageIn].numReadings++;
 	}
 
-	// save data
-	// TODO - control byte endian-ness, etc here
-	gDataBuffer.pages[gDataBuffer.currPage].data[(gDataBuffer.pages[gDataBuffer.currPage].numReadings * NUM_SENSORS)+sensorId].x.bytes[0] = data[0];
-	gDataBuffer.pages[gDataBuffer.currPage].data[(gDataBuffer.pages[gDataBuffer.currPage].numReadings * NUM_SENSORS)+sensorId].x.bytes[1] = data[1];
-	gDataBuffer.pages[gDataBuffer.currPage].data[(gDataBuffer.pages[gDataBuffer.currPage].numReadings * NUM_SENSORS)+sensorId].y.bytes[0] = data[2];
-	gDataBuffer.pages[gDataBuffer.currPage].data[(gDataBuffer.pages[gDataBuffer.currPage].numReadings * NUM_SENSORS)+sensorId].y.bytes[1] = data[3];
-	gDataBuffer.pages[gDataBuffer.currPage].data[(gDataBuffer.pages[gDataBuffer.currPage].numReadings * NUM_SENSORS)+sensorId].z.bytes[0] = data[4];
-	gDataBuffer.pages[gDataBuffer.currPage].data[(gDataBuffer.pages[gDataBuffer.currPage].numReadings * NUM_SENSORS)+sensorId].z.bytes[1] = data[5];
-	gDataBuffer.pages[gDataBuffer.currPage].numReadings++;
+	// printf("Advance data Page %d, Sample %d\n", gDataBuffer.currPageIn, gDataBuffer.currSampleIn);
+
+	processSensorQueue();
 }
-*/
 
 
 /**

@@ -148,13 +148,13 @@ void bma180_ReadSensorData(u08 *buffer, genericVoidCallbackFn callback)
 
 void bma180_ReadSensorData_p2()
 {
-  printf("bma180-p2\n");
+  // printf("bma180-p2\n");
   i2cMasterReceive(BMA180_DeviceID, 6, sensorData, bma180_ReadSensorData_p3);
 }
 
 void bma180_ReadSensorData_p3()
 {
-  printf("bma180-p3\n");
+  // printf("bma180-p3\n");
   sensorDataReady=true;
   if (sampleCompleteCallback != NULL) sampleCompleteCallback();
 }

@@ -146,7 +146,7 @@
 		var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 1024;
 		var ARROW_THICKNESS = 100;
 		var ARROW_LENGTH = 200;
-		var ONE_G = 8000; // One G force
+		var ONE_G = 16384; // One G force
 		
 		var enable3D = true; // TODO: toggle between 3d modes
 
@@ -235,8 +235,8 @@
 		function createMeasureScene() {
 			
 			var xBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_LENGTH,ARROW_THICKNESS,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0xCE2626}));
-			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x51B863}));
-			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x0936AC}));
+			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x0936AC}));
+			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x51B863}));
 
 			scene.add(xBox);
 			scene.add(yBox);
@@ -351,10 +351,10 @@
 			} else {
 				axes.x.scale.x = Math.abs(gioData.x) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
 				axes.x.position.x = gioData.x / ONE_G * (ARROW_LENGTH/2);
-				axes.y.scale.y = Math.abs(gioData.y) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.y.position.y = gioData.y / ONE_G * (ARROW_LENGTH/2);
-				axes.z.scale.z = Math.abs(gioData.z) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.z.position.z = gioData.z / ONE_G * (ARROW_LENGTH/2);
+				axes.y.scale.z = Math.abs(gioData.y) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.y.position.z = gioData.y / ONE_G * (ARROW_LENGTH/2);
+				axes.z.scale.y = Math.abs(gioData.z) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.z.position.y = gioData.z / ONE_G * (ARROW_LENGTH/2);
 			}
 			
 			r+=0.01

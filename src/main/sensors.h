@@ -24,7 +24,7 @@
  * must still change the prescale and counter values in initSensorTimers
  * and _handleTick to the desired values
  */
-#define TIMER_TICKS_PER_SECOND 70
+#define TIMER_TICKS_PER_SECOND 255
 
 typedef struct struct_SensorSample {
 	uint8_t bytes[2];

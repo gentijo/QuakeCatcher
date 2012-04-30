@@ -47,9 +47,26 @@ void timer0Init()
 	// ok, so TOIE0 is bit 0 of TIMSK0, and enables the overflow interrupt as specified
 }
 
+/**
+ * initialize timer 2 for external 32kHz crystal
+ */
+void timer2Init()
+{
+	// set external clock source (32kHz crystal)
+	sbi(ASSR, AS2);
+	timer2SetPrescaler( TIMER2PRESCALE );
+	timer2SetCounter(0);
+	sbi(TIMSK2, TOIE2);
+}
+
 void timer0SetCounter(u08 value)
 {
 	outb(TCNT0, value);
+}
+
+void timer2SetCounter(u08 value)
+{
+	outb(TCNT2, value);
 }
 
 void timer0SetPrescaler(u08 prescale)
@@ -59,12 +76,24 @@ void timer0SetPrescaler(u08 prescale)
 	outb(TCCR0B, (inb(TCCR0B) & ~TIMER_PRESCALE_MASK) | prescale);
 }
 
+void timer2SetPrescaler(u08 prescale)
+{
+	// set prescaler on timer 2
+	// TCCR2B - Timer / Counter Control Register B
+	outb(TCCR2B, (inb(TCCR2B) & ~TIMER_PRESCALE_MASK) | prescale);
+}
+
 u16 timer0GetPrescaler(void)
 {
 	// get the current prescaler setting
 	return (pgm_read_word(TimerPrescaleFactor+(inb(TCCR0B) & TIMER_PRESCALE_MASK)));
 }
 
+u16 timer2GetPrescaler(void)
+{
+	// get the current prescaler setting
+	return (pgm_read_word(TimerPrescaleFactor+(inb(TCCR2B) & TIMER_PRESCALE_MASK)));
+}
 
 void timerAttach(u08 interruptNum, void (*userFunc)(void) )
 {
@@ -93,4 +122,12 @@ TIMER_INTERRUPT_HANDLER(TIMER0_OVF_vect)
 	// if a user function is defined, execute it too
 	if(TimerIntFunc[TIMER0OVERFLOW_INT])
 		TimerIntFunc[TIMER0OVERFLOW_INT]();
+}
+
+//! Interrupt handler for tcnt2 overflow interrupt
+TIMER_INTERRUPT_HANDLER(TIMER2_OVF_vect)
+{
+	// if a user function is defined, execute it too
+	if(TimerIntFunc[TIMER2OVERFLOW_INT])
+		TimerIntFunc[TIMER2OVERFLOW_INT]();
 }

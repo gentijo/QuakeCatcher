@@ -9,6 +9,7 @@
 #include "../avr/driver/uart2.h"
 #include "../avr/rprintf.h"
 #include "sensors.h"
+#include "iotest.h"
 
 #include "../lib/timer128.h"
 
@@ -30,15 +31,16 @@ int main()
   uart1Init();
   stdout = &Serial0;
 
-  initSensorTimers();
+//  initSensorTimers();
   // enable interrupts globally
   sei();
 
   printf("\nInit Complete\n");
 
-  initSensorModule();
-  sensorMainLoop();
+//  initSensorModule();
+//  sensorMainLoop();
 
+  wifi_test();
   return 0;
 }
 

@@ -300,7 +300,6 @@ void uartSendTxBuffer(u08 nUart)
 
 u08 uartSendBuffer(u08 nUart, char *buffer, u16 nBytes)
 {
-	register u08 first;
 	register u16 i;
 	u08 result = FALSE;
 

@@ -78,20 +78,22 @@
 		.z { stroke: #0936AC; }
 		#graph {
 			position: absolute;
-			bottom: 20px;
+			bottom: 0px;
 			z-index: 1000;
-			width: 100%;
+			height: 300px;
 		}
 	</style>
 </head>
 <body>
 	<pre id="log"></pre>
-	<div id="graph"></div>
+	<div id="graph">
+		<canvas id="chart" width="1000" height="300"></canvas>
+	</div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/lib/Three.js" type="text/javascript" charset="utf-8"></script>
 	<script src="/lib/RequestAnimationFrame.js" type="text/javascript" charset="utf-8"></script>
 	<script src="/lib/Stats.js" type="text/javascript" charset="utf-8"></script>
-	<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+	<script src="/lib/smoothie.js" type="text/javascript" charset="utf-8"></script>
 	<script>
 		/**
 		 Create socket to receive data
@@ -104,9 +106,9 @@
 		socket.on('gio', function (data) {
 			//console.log(data);
 			if(data.x && data.y && data.z) {
-				gioData.x = data.x;
-				gioData.y = data.y;
-				gioData.z = data.z;
+				gioData.x = -data.x;
+				gioData.y = -data.y;
+				gioData.z = -data.z;
 				gioTS = new Date().getTime();
 			}
 		});
@@ -146,7 +148,7 @@
 		var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 1024;
 		var ARROW_THICKNESS = 100;
 		var ARROW_LENGTH = 200;
-		var ONE_G = 8000; // One G force
+		var ONE_G = 16384; // One G force
 		
 		var enable3D = true; // TODO: toggle between 3d modes
 
@@ -235,8 +237,8 @@
 		function createMeasureScene() {
 			
 			var xBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_LENGTH,ARROW_THICKNESS,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0xCE2626}));
-			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x51B863}));
-			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x0936AC}));
+			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x51B863}));
+			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x0936AC}));
 
 			scene.add(xBox);
 			scene.add(yBox);
@@ -351,10 +353,10 @@
 			} else {
 				axes.x.scale.x = Math.abs(gioData.x) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
 				axes.x.position.x = gioData.x / ONE_G * (ARROW_LENGTH/2);
-				axes.y.scale.y = Math.abs(gioData.y) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.y.position.y = gioData.y / ONE_G * (ARROW_LENGTH/2);
-				axes.z.scale.z = Math.abs(gioData.z) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.z.position.z = gioData.z / ONE_G * (ARROW_LENGTH/2);
+				axes.y.scale.z = Math.abs(gioData.y) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.y.position.z = gioData.y / ONE_G * (ARROW_LENGTH/2);
+				axes.z.scale.y = Math.abs(gioData.z) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
+				axes.z.position.y = gioData.z / ONE_G * (ARROW_LENGTH/2);
 			}
 			
 			r+=0.01
@@ -369,105 +371,34 @@
 	</script>
 	
 	<<script type="text/javascript" charset="utf-8">
-		var rate = 200,
-		// The scroll and update speed of the graph (ms)
-		points = 50,
-		// The number of points to generate
-		width = window.innerWidth,
-		// Chart width
-		height = 275,
-		// Chart height
-		padding = 40,
-		// Visual padding for the axis labels
-		updates = 0,
-		x = d3.scale.linear().domain([-1, 1]).range([0, width - padding * 2]),
-		y = d3.scale.linear().domain([-1, 1]).range([height, 0]),
-		axesNames = ['x','y','z'];
+		var smoothie = new SmoothieChart({
+			minValue: -1.5,
+			maxValue: 1.5,
+			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(0,0,0,0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 2 },
+			labels: { fillStyle: 'rgba(0,0,0,0.5)' }
+		});
+		var xLine = new TimeSeries();
+		var yLine = new TimeSeries();
+		var zLine = new TimeSeries();
 
-		function _getData(axis) {
-			return d3.range(points + 2).map(function(i) {
-				return _getDataPoint(axis, i);
-			})
-		}
+		smoothie.addTimeSeries(xLine, { strokeStyle: '#CE2626', lineWidth: 3 });
+		smoothie.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 3 });
+		smoothie.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 3 });
 		
-		function _getDataPoint(axis, i) {
-			return {
-				x: (i) / points,
-				y: gioData[axis] / ONE_G
-			}
+		function updateLines() {
+			xLine.append(new Date().getTime(), gioData.x/ONE_G);
+			yLine.append(new Date().getTime(), gioData.y/ONE_G);
+			zLine.append(new Date().getTime(), gioData.z/ONE_G);
 		}
-
-		var data = [_getData('x'), _getData('y'),_getData('z')]
-
-		var line = d3.svg.line()
-			.interpolate('basis')
-			.x(function(d) { return x(d.x - updates/points); })
-			.y(function(d) { return y(d.y); });
-
-		var chart = d3.select("#graph")
-			.append("svg:svg")
-			.attr("width", width + padding * 2)
-			.attr("height", height + padding * 2)
-			.append("svg:g")
-			.attr("transform", "translate(" + padding + "," + padding + ")")
-			.data(data)
-			
-		// Creating rules for the background grid.
-		var rules = chart.selectAll("g.rule")
-			.data(x.ticks(10))
-			.enter()
-			.append("svg:g")
-			.attr("class", "rule")
-
-		// X-axis lines
-		rules
-			.append("svg:line")
-			.attr("x1", x)
-			.attr("x2", x)
-			.attr("y1", 0)
-			.attr("y2", height)
-
-		// Y-axis labels
-		rules
-			.append("svg:text")
-			.attr("y", y)
-			.attr("x", -5)
-			.attr("dy", ".35em")
-			.attr("text-anchor", "end")
-			.attr("class", "y")
-			.text(x.tickFormat(10))
-			
-		// Create Paths
-		chart.selectAll('path')
-			.data(data)
-			.enter()
-			.append("svg:path")
-			.attr("class", function(d, i) { return ("line " + axesNames[i]); })
-			.attr("d", line)
-			
-		function updatePaths() {
-			for (var i=0; i < data.length; i++) {
-				data[i].push(_getDataPoint(axesNames[i], data[i].length))
-			}
-			
-			chart.selectAll('path')
-				.data(data)
-				.transition()
-				.duration(rate)
-				.ease("linear")
-				.attr("d", line)
-
-			updates++;
-		}
+		setInterval(updateLines, 250);
+		smoothie.streamTo(document.getElementById('chart'), 250);
 
 		function onResize() {
-			x = d3.scale.linear().domain([0, 1]).range([0, window.innerWidth - padding * 2]);
-			chart.selectAll('text.x').attr("x", x);
+			document.getElementById('chart').width = window.innerWidth;
 		}
-
-		window.setInterval(updatePaths, rate)
+		
+		onResize();
 		window.addEventListener('resize', onResize, false);
-
 	</script>>
 </body>
 </html>

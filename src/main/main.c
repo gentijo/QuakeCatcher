@@ -41,20 +41,8 @@ int main()
   return 0;
 }
 
-/**
- * Full-duplex send/receive between UART0 and UART1
- */
-void uartLoopBack()
-{
-  printf("UART Serial IO Tester\n");
 
-  while (true) {
-    sendIO(0, 1);
-    sendIO(1, 0);
-  }
-}
-
-void sendIO(u08 uartReceiveId, u08 uartSendId)
+static void _sendIO(u08 uartReceiveId, u08 uartSendId)
 {
 	u08 data;
 	bool dataToSend = false;
@@ -69,7 +57,18 @@ void sendIO(u08 uartReceiveId, u08 uartSendId)
 		uartSendTxBuffer(uartSendId);
 }
 
+/**
+ * Full-duplex send/receive between UART0 and UART1
+ */
+void uartLoopBack()
+{
+  printf("UART Serial IO Tester\n");
 
+  while (true) {
+    _sendIO(0, 1);
+    _sendIO(1, 0);
+  }
+}
 
 void ioinit (void)
 {

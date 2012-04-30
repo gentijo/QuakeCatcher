@@ -79,7 +79,7 @@
 // buffer memory allocation defines
 // buffer sizes
 #ifndef UART0_TX_BUFFER_SIZE
-#define UART0_TX_BUFFER_SIZE		128	///< number of bytes for uart0 transmit buffer
+#define UART0_TX_BUFFER_SIZE		1024	///< number of bytes for uart0 transmit buffer
 #endif
 #ifndef UART0_RX_BUFFER_SIZE
 #define UART0_RX_BUFFER_SIZE		0x0080	///< number of bytes for uart0 receive buffer

@@ -26,6 +26,7 @@ MesgBuf def_response = {
 
 bool sendATCommand(char *cmd, MesgBuf *response, bool checkOK, u08 waitSeconds);
 bool receiveResponse(MesgBuf *buf , bool checkForOK, u08 waitSeconds);
+void flushRxBuffer();
 
 
 
@@ -44,33 +45,104 @@ void  gs_Init(FILE *port)
   sendATCommand("at+WM=0",&def_response, true, 5);
   // Disconnect if previously connected
   sendATCommand("at+WD",&def_response, true, 5);
+
+  // Close any previous connections
+  sendATCommand("at+NCLOSEALL",&def_response, true, 5);
+
   // Set up the pre-shared keys
   sendATCommand("at+WPAPSK=ecs-office-net,DonGiovanni", &def_response, true, 20);
   // Connect to the AP
   sendATCommand("at+WA=ecs-office-net", &def_response, true, 20);
 
+  // Configure HTTP
+  sendATCommand(
+      "at+httpconf=20,User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1;en-US; rv:1.9.1.9) Gecko/20100315 Firefox/3.5.9",
+      &def_response, true, 1);
+  sendATCommand(
+      "at+httpconf=3, keep-alive", &def_response, true, 1);
+
+  sendATCommand(
+      "at+BDATA=1", &def_response, true, 1);
+
   // Set up NTP to point to the global time pool
   // First call forces update right away
-  sendATCommand("at+NTIMESYNC=1,216.45.57.38,10,0", &def_response, true, 20);
+  sendATCommand("at+NTIMESYNC=1,216.45.57.38,10,0", &def_response, true, 5);
   _delay_ms(300); // Give it a little time to actually contact an NTP server
-  sendATCommand("at+NTIMESYNC=1,216.45.57.38,10,1,3600", &def_response, true, 20);
+  sendATCommand("at+NTIMESYNC=1,216.45.57.38,10,1,3600", &def_response, true, 5);
 }
 
-HTTPMesg* gs_send_HTTPMessage(u08 *URL, HTTP_MesgType type, HTTPMesg *mesg)
+int  gs_open_connection(char *address)
 {
+  int CID = 0;
 
+ // char command[100] = "at+nctcp=";
+//  strcat(command, address);
+  printf("Opening Connection\n");
+  if (!sendATCommand(address, &def_response, true, 20)) CID = -1;
+  else
+  {
+    printf("response-> %s", def_resp_buf);
+    sscanf(def_resp_buf, "%d", &CID);
+  }
+
+  printf("Connection open done CID=%d", CID);
+
+  return CID;
 }
 
-
-int gs_get_NTPTime()
+bool gs_send_data(int connid, MesgBuf *txdata, MesgBuf *rxdata)
 {
+  flushRxBuffer();
+  printf("Sending Data Z%04d%s\n",txdata->len,txdata->buf);
+  fprintf(modemPort, "\x1bZ%04d",txdata->len);
+  for (int x=0; x< txdata->len; x++) fputc(txdata->buf[x],modemPort);
+  return true;
+}
+
+bool  gs_close_connection(int cid)
+{
+  char command[100];
+  sprintf(command, "AT+NCLOSE=%d", cid);
+  return sendATCommand(command, &def_response, true, 20);
+}
+
+time_t gs_get_NTPTime()
+{
+  struct tm time;
+  int month, day, year, hour, min, sec;
+
   sendATCommand("at+gettime=?",&def_response, true, 1);
-  return 0;
+  //28/4/2012,5:3:7,1335589387249
+  sscanf( def_resp_buf,
+      "%d/%d/%d,%d:%d:%d",
+      &day, &month, &year,
+      &hour, &min, &sec);
+  time.tm_year = year -1900;
+
+  printf(
+      "\nTime %d/%d/%d %d:%d:%d\n",
+      month, day, year,
+      hour, min, sec);
+
+  time.tm_mon = (u08)month;
+  time.tm_mday = (u08)day;
+  time.tm_year = (u08)year -1900;
+  time.tm_hour = (u08)hour;
+  time.tm_min = (u08)min;
+  time.tm_sec = (u08)sec;
+  time.tm_zone = "GMT";
+
+  time_t ntime = mktime(&time);
+  printf("%ld\n", ntime);
+
+  return ntime;
 }
 
 
 bool sendATCommand(char *cmd, MesgBuf *response, bool checkOK, u08 waitSeconds)
 {
+  flushRxBuffer();
+
   printf("Send Command-> [%s]", cmd);
   fputs(cmd,modemPort);
   fputs("\n",modemPort);
@@ -124,6 +196,17 @@ bool receiveResponse(MesgBuf *buf , bool checkForOK, u08 waitSeconds)
   return false;
 }
 
+
+void flushRxBuffer()
+{
+
+  // Delay a little bit so the buffer can fill up
+  _delay_ms(350);
+  while(fgetc(modemPort) != EOF)
+  {
+    _delay_ms(50);
+  }
+}
 
 
 

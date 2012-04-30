@@ -9,66 +9,42 @@
 #include "../avr/driver/uart2.h"
 #include "../avr/rprintf.h"
 #include "sensors.h"
+#include "iotest.h"
 
 #include "../lib/timer128.h"
 
-static int uart_putchar (char c, FILE *stream);
 void ioinit (void);
-void uartLoopBack();
 
-static FILE mystdout = FDEV_SETUP_STREAM (uart_putchar, NULL, _FDEV_SETUP_WRITE);
+static int uart0_putchar (char c, FILE *stream);
+static int uart0_getchar (FILE *stream);
+static int uart1_putchar (char c, FILE *stream);
+static int uart1_getchar (FILE *stream);
+
+FILE Serial0 = FDEV_SETUP_STREAM (uart0_putchar, uart0_getchar, _FDEV_SETUP_RW);
+FILE Serial1 = FDEV_SETUP_STREAM (uart1_putchar, uart1_getchar, _FDEV_SETUP_RW);
+
 
 int main()
 {
   ioinit();
   uart0Init();
   uart1Init();
+  stdout = &Serial0;
 
-  stdout = &mystdout;
-
-  initSensorTimers();
-
+//  initSensorTimers();
   // enable interrupts globally
   sei();
 
   printf("\nInit Complete\n");
 
-  initSensorModule();
-  sensorMainLoop();
+//  initSensorModule();
+//  sensorMainLoop();
 
-  // uartLoopBack();
-
+  wifi_test();
   return 0;
 }
 
 
-static void _sendIO(u08 uartReceiveId, u08 uartSendId)
-{
-	u08 data;
-	bool dataToSend = false;
-
-	while (uartReceiveByte(uartReceiveId, &data))
-	{
-		dataToSend = true;
-		uartAddToTxBuffer(uartSendId, data);
-	}
-
-	if (dataToSend)
-		uartSendTxBuffer(uartSendId);
-}
-
-/**
- * Full-duplex send/receive between UART0 and UART1
- */
-void uartLoopBack()
-{
-  printf("UART Serial IO Tester\n");
-
-  while (true) {
-    _sendIO(0, 1);
-    _sendIO(1, 0);
-  }
-}
 
 void ioinit (void)
 {
@@ -104,13 +80,47 @@ void ioinit (void)
 
 }
 
-static int uart_putchar (char c, FILE *stream)
+static int uart0_putchar (char c, FILE *stream)
 {
     if (c == '\n')
-        uart_putchar('\r', stream);
+        uart0_putchar('\r', stream);
 
     uartAddToTxBuffer(0, c);
     uartSendTxBuffer(0);
 
     return 0;
+}
+
+static int uart0_getchar (FILE *stream)
+{
+  u08 data;
+
+  if (uartReceiveByte(0, &data))
+  {
+      return (int) data;
+  }
+
+  return EOF;
+}
+
+static int uart1_putchar (char c, FILE *stream)
+{
+    if (c == '\n')
+        uart1_putchar('\r', stream);
+
+    uartAddToTxBuffer(1, c);
+
+    uartSendTxBuffer(1);
+    return 0;
+}
+
+static int uart1_getchar (FILE *stream)
+{
+  u08 data;
+
+  if (uartReceiveByte(1, &data))
+  {
+    return (int) data;
+  }
+  return EOF;
 }

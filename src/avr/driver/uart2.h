@@ -82,13 +82,13 @@
 #define UART0_TX_BUFFER_SIZE		1024	///< number of bytes for uart0 transmit buffer
 #endif
 #ifndef UART0_RX_BUFFER_SIZE
-#define UART0_RX_BUFFER_SIZE		0x0080	///< number of bytes for uart0 receive buffer
+#define UART0_RX_BUFFER_SIZE		1024	///< number of bytes for uart0 receive buffer
 #endif
 #ifndef UART1_TX_BUFFER_SIZE
-#define UART1_TX_BUFFER_SIZE		0x0010	///< number of bytes for uart1 transmit buffer
+#define UART1_TX_BUFFER_SIZE		1024	///< number of bytes for uart1 transmit buffer
 #endif
 #ifndef UART1_RX_BUFFER_SIZE
-#define UART1_RX_BUFFER_SIZE		0x0080	///< number of bytes for uart1 receive buffer
+#define UART1_RX_BUFFER_SIZE		1024	///< number of bytes for uart1 receive buffer
 #endif
 
 // define this key if you wish to use

@@ -21,6 +21,9 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <stdio.h>
+#include <stdlib.h>
+
 // global AVRLIB defines
 #include <avrlibdefs.h>
 // global AVRLIB types definitions
@@ -37,6 +40,11 @@
 //#define F_CPU        3686400               		// 3.69MHz processor
 #define CYCLES_PER_US ((F_CPU+500000)/1000000) 	// cpu cycles per microsecond
 
+#define ARETTYPE  size_t
+
 typedef void (*genericVoidCallbackFn)(void);
+
+extern FILE Serial0;
+extern FILE Serial1;
 
 #endif

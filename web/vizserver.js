@@ -46,7 +46,11 @@ function handler(req, res) {
 	if(req.method == 'POST') {
 		console.log('POST START');
 		req.on('data', function(chunk) {
-			console.log('RECEIVED CHUNK', chunk.toString());
+			console.log('RECEIVED CHUNK SIZE: ', chunk.length);
+			for(var i=0; i<Math.min(chunk.length,20); i+=2) {
+				console.log(chunk.readUInt16BE(i));
+			}
+			//console.log('RECEIVED CHUNK', chunk.toString());
 		});
 		
 		req.on('end', function() {
@@ -104,9 +108,9 @@ var gio = io.of('/gio').on('connection', function(socket) {
 // Randomly generated data
 var sampleDataInterval = setInterval(function() {
 	gio.emit('gio', {
-		x: Math.floor(Math.random()*1000),
-		y: Math.floor(-7000 - Math.random()*1000),
-		z: Math.floor(Math.random()*1000)
+		x: Math.floor(Math.random()*2000 - 1000),
+		y: Math.floor(Math.random()*32000 -16000),
+		z: Math.floor(Math.random()*2000 - 1000)
 	});
 }, 200);
 
@@ -138,10 +142,21 @@ try {
 		// The assumed format are three hex numbers representing x, y and z
 		// example: data = '0035F0230045';
 		console.log("Chunk received: " + data.toString());
-		data = data.toString();
-		var x = parseInt('0x0000' + data.substr(0,4),16);
-		var y = parseInt('0x0000' + data.substr(4,4),16);
-		var z = parseInt('0x0000' + data.substr(8,4),16);
+		data = data.toString().replace('\r','');
+		if(data == "Init Complete") { // MEANS CRASH!
+			console.log('******************** ***** *********************');
+			console.log('******************** CRASH *********************');
+			console.log('******************** ***** *********************');
+			return;
+		}
+		var arr = data.split(',');
+		if(!arr || arr.length != 3) {
+			return;
+		}
+		var x = arr[0];
+		var y = arr[1];
+		var z = arr[2];
+		
 		console.log("Interpreted accelerometer values: ", x, y, z);
 
 		// Emit data

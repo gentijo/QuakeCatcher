@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "lib/time.h"
 #include "global.h"
 
 typedef struct MesgBuf {
@@ -32,8 +33,12 @@ typedef enum HTTP_MesgType {
 } HTTP_MesgType;
 
 void      gs_Init(FILE *port);
-HTTPMesg* gs_send_HTTPMessage(u08 *URL, HTTP_MesgType type, HTTPMesg *mesg);
-int       gs_get_NTPTime();
+
+int       gs_open_connection(char *address);
+bool      gs_send_data(int connid, MesgBuf *txdata, MesgBuf *rxdata);
+bool      gs_close_connection(int cid);
+
+time_t    gs_get_NTPTime();
 
 
 #endif /* GAINSPAN_H_ */

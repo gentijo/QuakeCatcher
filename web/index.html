@@ -146,8 +146,10 @@
 		    FAR = 3000;
 
 		var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 1024;
-		var ARROW_THICKNESS = 100;
-		var ARROW_LENGTH = 200;
+		var ARROW_THICKNESS = 50;
+		var ARROW_LENGTH = 300;
+		var CONE_WIDTH = 72;
+		var CONE_HEIGHT = 120;
 		var ONE_G = 16384; // One G force
 		
 		var enable3D = true; // TODO: toggle between 3d modes
@@ -239,15 +241,26 @@
 			var xBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_LENGTH,ARROW_THICKNESS,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0xCE2626}));
 			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x51B863}));
 			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x0936AC}));
-
+			
 			scene.add(xBox);
 			scene.add(yBox);
 			scene.add(zBox);
 			
+			var xArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, 50, 50), new THREE.MeshLambertMaterial({color: 0xCE2626}));
+			var yArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, 50, 50), new THREE.MeshLambertMaterial({color: 0x51B863}));
+			var zArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, 50, 50), new THREE.MeshLambertMaterial({color: 0x0936AC}));
+
+			scene.add(xArrow);
+			scene.add(yArrow);
+			scene.add(zArrow);
+
 			axes = {
 				x: xBox,
 				y: yBox,
-				z: zBox
+				z: zBox,
+				xArrow: xArrow,
+				yArrow: yArrow,
+				zArrow: zArrow
 			}			
 		}
 
@@ -351,12 +364,20 @@
 				axes.y.scale.y = Math.max(axes.y.scale.y-0.01,0);
 				axes.z.scale.z = Math.max(axes.z.scale.z-0.01,0);
 			} else {
-				axes.x.scale.x = Math.abs(gioData.x) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.x.position.x = gioData.x / ONE_G * (ARROW_LENGTH/2);
-				axes.y.scale.z = Math.abs(gioData.y) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.y.position.z = gioData.y / ONE_G * (ARROW_LENGTH/2);
-				axes.z.scale.y = Math.abs(gioData.z) / ONE_G + ARROW_THICKNESS / ARROW_LENGTH;
-				axes.z.position.y = gioData.z / ONE_G * (ARROW_LENGTH/2);
+				axes.x.position.x = gioData.x / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
+				axes.xArrow.visible = (Math.abs(gioData.x/ONE_G) > 0.1);
+				axes.xArrow.position.x = axes.x.position.x + ((gioData.x < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
+				axes.xArrow.rotation.z = ((gioData.x < 0)?1:-1) * Math.PI / 2;
+				
+				axes.y.position.z = gioData.y / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
+				axes.yArrow.visible = (Math.abs(gioData.y/ONE_G) > 0.1);
+				axes.yArrow.position.z = axes.y.position.z + ((gioData.y < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
+				axes.yArrow.rotation.x = ((gioData.y < 0)?-1:1) * Math.PI / 2;
+
+				axes.z.position.y = gioData.z / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
+				axes.zArrow.visible = (Math.abs(gioData.z/ONE_G) > 0.1);
+				axes.zArrow.position.y = axes.z.position.y + ((gioData.z < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
+				axes.zArrow.rotation.z = ((gioData.z < 0)?-1:-2) * Math.PI;
 			}
 			
 			r+=0.01

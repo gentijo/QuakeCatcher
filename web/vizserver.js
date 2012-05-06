@@ -177,7 +177,7 @@ net.createServer(function (c) {
 	c.on('data', function(chunk) {
 		console.log('incoming chunk!', chunk, chunk+'');
 		var set = String(chunk).split('\n');
-		var time = 1000/set.length;
+		var time = Math.floor(1000/set.length);
 		for(var i=0; i<set.length; i++) {
 			processHexData(set[i], time);
 		}

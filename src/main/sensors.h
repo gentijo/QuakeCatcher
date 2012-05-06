@@ -63,5 +63,6 @@ void captureData();
 
 void sensorMainLoop();
 
+extern short connectionId;
 
 #endif

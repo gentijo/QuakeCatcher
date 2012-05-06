@@ -90,13 +90,26 @@ int  gs_open_connection(char *address)
   return CID;
 }
 
+bool gs_start_data(u16 length, short connectionId)
+{
+	printf("Sending Data Z%04d\n",length);
+	// fprintf(modemPort, "\x1bZ%04d",length);
+	fprintf(modemPort, "\x1bZ%d%04d",connectionId, length);
+
+	return true;
+}
+
+FILE *gs_get_modem_port()
+{
+	return modemPort;
+}
+
 bool gs_send_data(int connid, MesgBuf *txdata, MesgBuf *rxdata)
 {
-  flushRxBuffer();
-  printf("Sending Data Z%04d%s\n",txdata->len,txdata->buf);
-  fprintf(modemPort, "\x1bZ%04d",txdata->len);
-  for (int x=0; x< txdata->len; x++) fputc(txdata->buf[x],modemPort);
-  return true;
+	flushRxBuffer();
+	gs_start_data(txdata->len, connid);
+	for (int x=0; x< txdata->len; x++) fputc(txdata->buf[x],modemPort);
+	return true;
 }
 
 bool  gs_close_connection(int cid)

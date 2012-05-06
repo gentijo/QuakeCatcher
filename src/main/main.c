@@ -31,16 +31,20 @@ int main()
   uart1Init();
   stdout = &Serial0;
 
-//  initSensorTimers();
+  initSensorTimers();
+
   // enable interrupts globally
   sei();
 
+  gs_Init(&Serial1);
+
+  connectionId = gs_open_connection("at+NCTCP=192.168.1.238,8125");
+
   printf("\nInit Complete\n");
 
-//  initSensorModule();
-//  sensorMainLoop();
+  initSensorModule();
+  sensorMainLoop();
 
-  wifi_test();
   return 0;
 }
 

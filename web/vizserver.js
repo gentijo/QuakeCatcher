@@ -112,7 +112,36 @@ function emitData(x, y, z) {
 	});
 }
 
-function processHexData(data) {
+var dataQueue = [];
+var queueTimer = -1;
+
+function queueData(x ,y, z, time) {
+	if(!time) {
+		emitData(x, y, z);
+		return;
+	}
+	dataQueue.push({
+		x: x,
+		y: y,
+		z: z,
+		time: time
+	});
+	if(queueTimer == -1) {
+		queueTimer = setTimeout(checkQueue, time);
+	}
+}
+
+function checkQueue() {
+	var data = dataQueue.shift();
+	emitData(data.x, data.y, data.z);
+	if(dataQueue.length) {
+		queueTimer = setTimeout(checkQueue, dataQueue[0].time);
+	} else {
+		queueTimer = -1;
+	}
+}
+
+function processHexData(data, time) {
 	if(!data) return;
 	var buffer = new Buffer(6);
 	for (var i=0; i < 6; i++) {
@@ -124,7 +153,7 @@ function processHexData(data) {
 	}
 
 	console.log(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
-	emitData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+	queueData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4), time);
 }
 
 // TODO: remove this once we're ready to take in live data
@@ -148,8 +177,9 @@ net.createServer(function (c) {
 	c.on('data', function(chunk) {
 		console.log('incoming chunk!', chunk, chunk+'');
 		var set = String(chunk).split('\n');
+		var time = 1000/set.length;
 		for(var i=0; i<set.length; i++) {
-			processHexData(set[i]);
+			processHexData(set[i], time);
 		}
 	});
 	c.on('end', function() {

@@ -7,6 +7,7 @@
 #include "../device/bma180/bma180_i2c.h"
 #include "../avr/driver/uart2.h"
 #include "../avr/rprintf.h"
+#include "../network/gswifi/gs.h"
 
 #include "../lib/timer128.h"
 #include "../lib/simpleTime.h"
@@ -48,6 +49,8 @@ static u08 _isCollectingData = false;
 static DataBuffer gDataBuffer;
 
 
+short connectionId;
+
 void initSensorTimers()
 {
 	timer2Init();
@@ -78,6 +81,7 @@ static void _handleTick(void)
 	}
 
 	// 256/5 ~= 51Hz sampling rate
+
 	if (_realtimeClockCounter % 5 == 0)
 		_sampleCycle();
 }
@@ -159,12 +163,19 @@ static void _transmitPage(u08 pageIn)
 {
 	gDataBuffer.pages[pageIn].lockForSending = TRUE;
 
-	uint16_t x, y, z;
+	printf("start sending page %d\n", pageIn);
+
+	// start transmit
+	u16 dataSize = 700; // SAMPLES_PER_DATA_PAGE * (NUM_SAMPLE_BYTES + 2);
+
+	gs_start_data(dataSize, connectionId);
 
 	for (u08 i=0; i<SAMPLES_PER_DATA_PAGE; i++)
 	{
 		u08 offsetIn = (SENSOR_ID_BMA180 * SAMPLES_PER_DATA_PAGE)+i;
 		u08 *buffer = (u08*)&gDataBuffer.pages[pageIn].data[offsetIn];
+
+		u16 x, y, z;
 
 		x = buffer[1]<<8|buffer[0];
 
@@ -173,9 +184,12 @@ static void _transmitPage(u08 pageIn)
 		z = buffer[5]<<8|buffer[4];
 
 		char output[50];
-		sprintf(output, "%d,%d,%d\r\n", x, y, z);
-		uartSendBuffer(0, output, strlen(output));
+		sprintf(output, "%04x%04x%04x\r\n", x, y, z);
+		uartSendBuffer(1, output, strlen(output));
+		// uartSendBuffer(0, buffer, 6);
 	}
+
+	//
 
 	gDataBuffer.pages[pageIn].numReadings = 0;
 	gDataBuffer.pages[pageIn].lockForSending = FALSE;

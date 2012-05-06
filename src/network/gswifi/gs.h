@@ -40,5 +40,9 @@ bool      gs_close_connection(int cid);
 
 time_t    gs_get_NTPTime();
 
+bool gs_start_data(u16 length, short connectionId);
+FILE *gs_get_modem_port();
+
+
 
 #endif /* GAINSPAN_H_ */

@@ -184,7 +184,7 @@ var sampleDataInterval = setInterval(function() {
 		Math.floor(Math.sin(new Date().getTime()/1000) * 16000),
 		Math.floor(Math.sin(new Date().getTime()/1000 + 2349087) * 16000)
 	);
-}, 5000);
+}, 50);
 
 /**
  Network server that listens for a stream of data

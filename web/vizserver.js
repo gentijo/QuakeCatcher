@@ -136,37 +136,32 @@ console.log('Data Server listening on ' + hostname + ':8125');
  **/
 
 try {
-	var serialPort = new SerialPort.SerialPort(serialPath, { parser: SerialPort.parsers.readline("\n") });
+	var serialPort = new SerialPort.SerialPort(serialPath, { parser: SerialPort.parsers.readline('\r\n') });
 
+	var buffer = new Buffer(6);
+	var bufferIndex = 0;
+	var setsReceived = 0;
 	serialPort.on("data", function(data) {
 		// The assumed format are three hex numbers representing x, y and z
 		// example: data = '0035F0230045';
-		console.log("Chunk received: " + data.toString());
-		data = data.toString().replace('\r','');
-		if(data == "Init Complete") { // MEANS CRASH!
-			console.log('******************** ***** *********************');
-			console.log('******************** CRASH *********************');
-			console.log('******************** ***** *********************');
-			return;
+		console.log("Chunk received: " + data.toString(), " Chunk size", data.length);
+		data = data.toString();
+		var buffer = new Buffer(6);
+		for (var i=0; i < 6; i++) {
+			buffer[i] = parseInt('0x' + data.substr(i*2,2), 16);
 		}
-		var arr = data.split(',');
-		if(!arr || arr.length != 3) {
-			return;
-		}
-		var x = arr[0];
-		var y = arr[1];
-		var z = arr[2];
-		
-		console.log("Interpreted accelerometer values: ", x, y, z);
 
-		// Emit data
+		function readInt(buffer, offset) {
+			return buffer.readInt16BE(offset);
+		}
+
+		console.log(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+
 		gio.emit('gio', {
-			x: x,
-			y: y,
-			z: z
+			x: readInt(buffer, 0),
+			y: readInt(buffer, 2),
+			z: readInt(buffer, 4)
 		});
-		
-		//sys.puts('.');
 	}).on("error", function(msg) {
 		console.log('Serial Port Error: ' + msg);
 	});

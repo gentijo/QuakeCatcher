@@ -259,10 +259,28 @@ u08 uartReceiveBufferIsEmpty(u08 nUart)
 	return (uartRxBuffer[nUart].datalength == 0);
 }
 
+/**
+ * NOTE - this will block until the buffer has available space!
+ * TODO - this is a pretty big risk for deadlocked code...
+ */
 void uartAddToTxBuffer(u08 nUart, u08 data)
 {
 	// add data byte to the end of the tx buffer
-	bufferAddToEnd(&uartTxBuffer[nUart], data);
+	// block until buffer is available
+	u08 added = FALSE;
+
+	while (!added)
+	{
+		while(uartTxBuffer[nUart].datalength >= uartTxBuffer[nUart].size);
+
+		CRITICAL_SECTION_START;
+		if (uartTxBuffer[nUart].datalength < uartTxBuffer[nUart].size)
+		{
+			bufferAddToEnd(&uartTxBuffer[nUart], data);
+			added = TRUE;
+		}
+		CRITICAL_SECTION_END;
+	}
 }
 
 void uart0AddToTxBuffer(u08 data)

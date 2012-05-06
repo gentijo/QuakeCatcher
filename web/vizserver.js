@@ -103,6 +103,13 @@ var gio = io.of('/gio').on('connection', function(socket) {
 	});
 });
 
+function emitData(x, y, z) {
+	gio.emit('gio', {
+		x: x,
+		y: y,
+		z: z
+	});
+}
 
 // TODO: remove this once we're ready to take in live data
 // Randomly generated data
@@ -156,12 +163,7 @@ try {
 		}
 
 		console.log(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
-
-		gio.emit('gio', {
-			x: readInt(buffer, 0),
-			y: readInt(buffer, 2),
-			z: readInt(buffer, 4)
-		});
+		emitData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
 	}).on("error", function(msg) {
 		console.log('Serial Port Error: ' + msg);
 	});

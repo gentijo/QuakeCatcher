@@ -94,6 +94,7 @@ console.log('Web Server running at http://' + hostname + ':' + webport + '/');
  **/
 
 var io = require('socket.io').listen(server);
+io.set("log level", 0);
 var gio = io.of('/gio').on('connection', function(socket) {
 	socket.emit('gio', {
 		online: 'online'

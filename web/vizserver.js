@@ -112,6 +112,21 @@ function emitData(x, y, z) {
 	});
 }
 
+function processHexData(data) {
+	if(!data) return;
+	var buffer = new Buffer(6);
+	for (var i=0; i < 6; i++) {
+		buffer[i] = parseInt('0x' + data.substr(i*2,2), 16);
+	}
+
+	function readInt(buffer, offset) {
+		return buffer.readInt16BE(offset);
+	}
+
+	console.log(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+	emitData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+}
+
 // TODO: remove this once we're ready to take in live data
 // Randomly generated data
 var sampleDataInterval = setInterval(function() {
@@ -132,10 +147,15 @@ net.createServer(function (c) {
 	console.log('Connected!');
 	c.on('data', function(chunk) {
 		console.log('incoming chunk!', chunk, chunk+'');
+		var set = String(chunk).split('\n');
+		for(var i=0; i<set.length; i++) {
+			processHexData(set[i]);
+		}
 	});
 	c.on('end', function() {
 		console.log('Connection Ended');
 	})
+	clearInterval(sampleDataInterval); // Stop the sample data generator
 }).listen(dataport, hostname);
 console.log('Data Server listening on ' + hostname + ':8125');
 
@@ -154,17 +174,7 @@ try {
 		// example: data = '0035F0230045';
 		console.log("Chunk received: " + data.toString(), " Chunk size", data.length);
 		data = data.toString();
-		var buffer = new Buffer(6);
-		for (var i=0; i < 6; i++) {
-			buffer[i] = parseInt('0x' + data.substr(i*2,2), 16);
-		}
-
-		function readInt(buffer, offset) {
-			return buffer.readInt16BE(offset);
-		}
-
-		console.log(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
-		emitData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+		processHexData(data);
 	}).on("error", function(msg) {
 		console.log('Serial Port Error: ' + msg);
 	});

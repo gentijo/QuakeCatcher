@@ -37,7 +37,7 @@ typedef struct struct_SensorReading {
 } SensorReading;
 
 typedef struct struct_DataPage {
-	uint8_t startTime[4];
+	u32 startTime;
 	uint8_t numReadings;
 	bool lockForSending;
 	SensorReading data[NUM_SENSORS * SAMPLES_PER_DATA_PAGE];

@@ -14,7 +14,7 @@
 #include "global.h"
 
 typedef struct MesgBuf {
-  u08 *buf;
+  char *buf;
   u16 capicity;
   u16 len;
 } MesgBuf;
@@ -32,11 +32,11 @@ typedef enum HTTP_MesgType {
   HTTP_GET_MESG=2
 } HTTP_MesgType;
 
-void      gs_Init(FILE *port);
+void  gs_Init(FILE *port, char *networkName, char *pwd);
 
-int       gs_open_connection(char *address);
-bool      gs_send_data(int connid, MesgBuf *txdata, MesgBuf *rxdata);
-bool      gs_close_connection(int cid);
+int gs_open_connection(char *address, char *port);
+bool gs_send_data(int connid, MesgBuf *txdata, MesgBuf *rxdata);
+bool gs_close_connection(int cid);
 
 time_t    gs_get_NTPTime();
 

@@ -5,6 +5,7 @@
  *      Author: gentijo
  */
 #include "ioinit.h"
+#include "../avr/driver/i2c.h"
 
 static int uart0_putchar (char c, FILE *stream);
 static int uart0_getchar (FILE *stream);

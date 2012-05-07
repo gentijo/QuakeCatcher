@@ -30,7 +30,7 @@ void flushRxBuffer();
 
 
 
-void  gs_Init(FILE *port)
+void  gs_Init(FILE *port, char *networkName, char *pwd)
 {
   modemPort = port;
 
@@ -50,35 +50,35 @@ void  gs_Init(FILE *port)
   sendATCommand("at+NCLOSEALL",&def_response, true, 5);
 
   // Set up the pre-shared keys
-  sendATCommand("at+WPAPSK=ecs-office-net,DonGiovanni", &def_response, true, 20);
+  char cmdBuffer[100];
+  sprintf(cmdBuffer, "at+WPAPSK=%s,%s", networkName, pwd);
+  sendATCommand(cmdBuffer, &def_response, true, 20);
   // Connect to the AP
-  sendATCommand("at+WA=ecs-office-net", &def_response, true, 20);
-
-  // Configure HTTP
-  sendATCommand(
-      "at+httpconf=20,User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1;en-US; rv:1.9.1.9) Gecko/20100315 Firefox/3.5.9",
-      &def_response, true, 1);
-  sendATCommand(
-      "at+httpconf=3, keep-alive", &def_response, true, 1);
+  sprintf(cmdBuffer, "at+WA=%s", networkName);
+  sendATCommand(cmdBuffer, &def_response, true, 20);
 
   sendATCommand(
       "at+BDATA=1", &def_response, true, 1);
 
   // Set up NTP to point to the global time pool
   // First call forces update right away
+  /*
   sendATCommand("at+NTIMESYNC=1,216.45.57.38,10,0", &def_response, true, 5);
   _delay_ms(300); // Give it a little time to actually contact an NTP server
   sendATCommand("at+NTIMESYNC=1,216.45.57.38,10,1,3600", &def_response, true, 5);
+  */
 }
 
-int  gs_open_connection(char *address)
+int  gs_open_connection(char *address, char *port)
 {
   int CID = 0;
 
- // char command[100] = "at+nctcp=";
-//  strcat(command, address);
   printf("Opening Connection\n");
-  if (!sendATCommand(address, &def_response, true, 20)) CID = -1;
+
+  char cmdBuffer[100];
+  sprintf(cmdBuffer, "at+NCTCP=%s,%s", address, port);
+
+  if (!sendATCommand(cmdBuffer, &def_response, true, 20)) CID = -1;
   else
   {
     printf("response-> %s", def_resp_buf);

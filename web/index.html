@@ -124,15 +124,9 @@
 
 		var container, stats;
 
-		var camera, scene, canvasRenderer, webglRenderer;
-
-		var loader;
-
-		var mesh, zmesh, lightMesh;
-		
-		var axes;
-
-		var directionalLight, pointLight, spotLight;
+		var camera, scene, webglRenderer, 
+			lightMesh, directionalLight, pointLight, spotLight,
+			axes;
 
 		var mouseX = 0, mouseY = 0;
 
@@ -257,74 +251,6 @@
 			}			
 		}
 
-		function addMesh( geometry, scale, x, y, z, rx, ry, rz, material ) {
-
-			mesh = new THREE.Mesh( geometry, material );
-
-			mesh.scale.set( scale, scale, scale );
-			mesh.position.set( x, y, z );
-			mesh.rotation.set( rx, ry, rz );
-			
-			mesh.castShadow = true;
-			//mesh.receiveShadow = true;
-
-			scene.add( mesh );
-
-			return mesh;
-		}
-		
-		function createScene(geometry, start) {
-			// common material parameters
-
-			var ambient = 0x050505, diffuse = 0x331100, specular = 0xffffff, shininess = 10, scale = 23;
-
-			// normal map shader
-
-			var shader = THREE.ShaderUtils.lib[ "normal" ];
-			var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
-
-			uniforms[ "enableAO" ].value = true;
-			uniforms[ "enableDiffuse" ].value = false;
-			uniforms[ "enableSpecular" ].value = false;
-			uniforms[ "enableReflection" ].value = false;
-
-			uniforms[ "uDiffuseColor" ].value.setHex( diffuse );
-			uniforms[ "uSpecularColor" ].value.setHex( specular );
-			uniforms[ "uAmbientColor" ].value.setHex( ambient );
-
-			uniforms[ "uShininess" ].value = shininess;
-
-			var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms, lights: true, fog: false };
-			var material1 = new THREE.ShaderMaterial( parameters );
-
-			var scale = 2;
-			robot = addMesh(geometry, scale, 0,0,0, 0,0,0, new THREE.MeshLambertMaterial(
-			{
-			    color: 0xA4C639
-			}) );
-			
-			geometry.computeBoundingBox();
-
-			// floor
-			var planeGeo = new THREE.PlaneGeometry(100, 100);
-			var planeMat = new THREE.MeshLambertMaterial({color: 0xffdd99});
-			var plane = new THREE.Mesh(planeGeo, planeMat);
-			plane.rotation.x = -Math.PI/2;
-			plane.position.y = geometry.boundingBox.y[0] * scale;
-			plane.scale.set(100, 100, 100);
-			
-			plane.castShadow = false;
-			plane.receiveShadow = true;
-			scene.add(plane);		
-
-			loader.statusDomElement.style.display = "none";
-
-			log( "geometry.vertices: " + geometry.vertices.length );
-			log( "geometry.faces: " + geometry.faces.length );
-
-			log( "model loaded and created in " + ( Date.now() - start ) + " ms" );
-		}
-		
 		function animate() {
 			requestAnimationFrame(animate);
 			render();

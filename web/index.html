@@ -311,6 +311,22 @@
 	</script>
 	
 	<<script type="text/javascript" charset="utf-8">
+	// Stats utilities
+	var Stats = {};
+	Stats.StandardDeviation = function(arr) {
+		var avg = Stats.mean(arr);
+		var squares = 0;
+		for (var i=0; i < arr.length; i++) {
+			squares += Math.pow(arr[i] - avg, 2);
+		}
+		return Math.sqrt(squares / arr.length);
+	}
+	
+	Stats.mean = function(arr) {
+		for (var i=0, sum=0; i < arr.length; sum += arr[i++]);
+		return sum/arr.length;
+	}
+
 	if(enableGraph) {
 		var smoothie = new SmoothieChart({
 			minValue: -1.5,
@@ -338,11 +354,39 @@
 			return (data*(1-filterValue) + smoothValue*filterValue);
 		}
 		
+		var axesSamples = [[],[],[]];
+		var sampleSize = 50;
+		
+		// STD Deviation threshold constant
+		var DEVIATION_THRESHOLD = 4;
+		
+		function checkSample(x, y, z) {
+			var maxDeviation = 0;
+			for (var i=0; i < axesSamples.length; i++) {
+				axesSamples[i].push(arguments[i]);
+				if(axesSamples[i].length > sampleSize) {
+					axesSamples[i].shift();
+				}
+				var stdDev = Stats.StandardDeviation(axesSamples[i]);
+				var mean = Stats.mean(axesSamples[i]);
+				var deviation = Math.abs(arguments[i] - mean) / stdDev;
+				if(deviation > maxDeviation) {
+					maxDeviation = deviation;
+				}
+			}
+			if(maxDeviation > DEVIATION_THRESHOLD) {
+				console.log('QUAKE', maxDeviation);
+			}
+			return maxDeviation;
+		}
+		
 		function updateLines() {
 			var filterValue = 0.9;
 			gioSmooth.x = smooth(gioData.x, filterValue, gioSmooth.x);
 			gioSmooth.y = smooth(gioData.y, filterValue, gioSmooth.y);
 			gioSmooth.z = smooth(gioData.z, filterValue, gioSmooth.z);
+
+			checkSample(gioSmooth.x, gioSmooth.y, gioSmooth.z);
 			
 			xSmooth.append(new Date().getTime(), gioSmooth.x/ONE_G);
 			ySmooth.append(new Date().getTime(), gioSmooth.y/ONE_G);

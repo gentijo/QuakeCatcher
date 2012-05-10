@@ -18,10 +18,9 @@ int main()
   // enable interrupts globally
   sei();
 
-  gs_Init(&Serial1, "ecs-office-net", "");
+  gs_Init(&Serial1, "ProjectGIO", "QuakeCatcher");
 
-  // connectionId = gs_open_connection("192.168.100.249", "8125");
-  connectionId = gs_open_connection("192.168.1.237", "8125");
+  connectionId = gs_open_connection("192.168.0.110", "8125");
 
   printf("\nInit Complete\n");
 

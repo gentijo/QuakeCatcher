@@ -124,15 +124,9 @@
 
 		var container, stats;
 
-		var camera, scene, canvasRenderer, webglRenderer;
-
-		var loader;
-
-		var mesh, zmesh, lightMesh;
-		
-		var axes;
-
-		var directionalLight, pointLight, spotLight;
+		var camera, scene, webglRenderer, 
+			lightMesh, directionalLight, pointLight, spotLight,
+			axes;
 
 		var mouseX = 0, mouseY = 0;
 
@@ -154,6 +148,7 @@
 		var ONE_G = 16384; // One G force
 		
 		var enable3D = true; // TODO: toggle between 3d modes
+		var enableGraph = true;
 
 		if(enable3D) {
 			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
@@ -199,13 +194,12 @@
 			scene.add(spotLight)
 
 			// light representation
-
 			sphere = new THREE.SphereGeometry( 100, 16, 8, 1 );
 			lightMesh = new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xffaa00 } ) );
 			lightMesh.scale.set( 0.05, 0.05, 0.05 );
 			lightMesh.position = pointLight.position;
 			scene.add( lightMesh );
-			
+
 			try {
 
 				webglRenderer = new THREE.WebGLRenderer( { antialias: true, clearAlpha: 1 } );
@@ -213,14 +207,6 @@
 				webglRenderer.domElement.style.position = "relative";
 				webglRenderer.setClearColorHex(0xEEEEEE, 1.0);
 				
-				// Shadows
-				webglRenderer.shadowMapBias = 0.0039;
-				webglRenderer.shadowMapDarkness = 0.5;
-				webglRenderer.shadowMapWidth = SHADOW_MAP_WIDTH;
-				webglRenderer.shadowMapHeight = SHADOW_MAP_HEIGHT;
-				
-				webglRenderer.shadowMapEnabled = true;
-				webglRenderer.shadowMapSoft = true;
 				container.appendChild( webglRenderer.domElement );
 				has_gl = 1;
 
@@ -265,74 +251,6 @@
 			}			
 		}
 
-		function addMesh( geometry, scale, x, y, z, rx, ry, rz, material ) {
-
-			mesh = new THREE.Mesh( geometry, material );
-
-			mesh.scale.set( scale, scale, scale );
-			mesh.position.set( x, y, z );
-			mesh.rotation.set( rx, ry, rz );
-			
-			mesh.castShadow = true;
-			//mesh.receiveShadow = true;
-
-			scene.add( mesh );
-
-			return mesh;
-		}
-		
-		function createScene(geometry, start) {
-			// common material parameters
-
-			var ambient = 0x050505, diffuse = 0x331100, specular = 0xffffff, shininess = 10, scale = 23;
-
-			// normal map shader
-
-			var shader = THREE.ShaderUtils.lib[ "normal" ];
-			var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
-
-			uniforms[ "enableAO" ].value = true;
-			uniforms[ "enableDiffuse" ].value = false;
-			uniforms[ "enableSpecular" ].value = false;
-			uniforms[ "enableReflection" ].value = false;
-
-			uniforms[ "uDiffuseColor" ].value.setHex( diffuse );
-			uniforms[ "uSpecularColor" ].value.setHex( specular );
-			uniforms[ "uAmbientColor" ].value.setHex( ambient );
-
-			uniforms[ "uShininess" ].value = shininess;
-
-			var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms, lights: true, fog: false };
-			var material1 = new THREE.ShaderMaterial( parameters );
-
-			var scale = 2;
-			robot = addMesh(geometry, scale, 0,0,0, 0,0,0, new THREE.MeshLambertMaterial(
-			{
-			    color: 0xA4C639
-			}) );
-			
-			geometry.computeBoundingBox();
-
-			// floor
-			var planeGeo = new THREE.PlaneGeometry(100, 100);
-			var planeMat = new THREE.MeshLambertMaterial({color: 0xffdd99});
-			var plane = new THREE.Mesh(planeGeo, planeMat);
-			plane.rotation.x = -Math.PI/2;
-			plane.position.y = geometry.boundingBox.y[0] * scale;
-			plane.scale.set(100, 100, 100);
-			
-			plane.castShadow = false;
-			plane.receiveShadow = true;
-			scene.add(plane);		
-
-			loader.statusDomElement.style.display = "none";
-
-			log( "geometry.vertices: " + geometry.vertices.length );
-			log( "geometry.faces: " + geometry.faces.length );
-
-			log( "model loaded and created in " + ( Date.now() - start ) + " ms" );
-		}
-		
 		function animate() {
 			requestAnimationFrame(animate);
 			render();
@@ -393,6 +311,23 @@
 	</script>
 	
 	<<script type="text/javascript" charset="utf-8">
+	// Stats utilities
+	var Stats = {};
+	Stats.StandardDeviation = function(arr) {
+		var avg = Stats.mean(arr);
+		var squares = 0;
+		for (var i=0; i < arr.length; i++) {
+			squares += Math.pow(arr[i] - avg, 2);
+		}
+		return Math.sqrt(squares / arr.length);
+	}
+	
+	Stats.mean = function(arr) {
+		for (var i=0, sum=0; i < arr.length; sum += arr[i++]);
+		return sum/arr.length;
+	}
+
+	if(enableGraph) {
 		var smoothie = new SmoothieChart({
 			minValue: -1.5,
 			maxValue: 1.5,
@@ -419,11 +354,39 @@
 			return (data*(1-filterValue) + smoothValue*filterValue);
 		}
 		
+		var axesSamples = [[],[],[]];
+		var sampleSize = 50;
+		
+		// STD Deviation threshold constant
+		var DEVIATION_THRESHOLD = 4;
+		
+		function checkSample(x, y, z) {
+			var maxDeviation = 0;
+			for (var i=0; i < axesSamples.length; i++) {
+				axesSamples[i].push(arguments[i]);
+				if(axesSamples[i].length > sampleSize) {
+					axesSamples[i].shift();
+				}
+				var stdDev = Stats.StandardDeviation(axesSamples[i]);
+				var mean = Stats.mean(axesSamples[i]);
+				var deviation = Math.abs(arguments[i] - mean) / stdDev;
+				if(deviation > maxDeviation) {
+					maxDeviation = deviation;
+				}
+			}
+			if(maxDeviation > DEVIATION_THRESHOLD) {
+				console.log('QUAKE', maxDeviation);
+			}
+			return maxDeviation;
+		}
+		
 		function updateLines() {
 			var filterValue = 0.9;
 			gioSmooth.x = smooth(gioData.x, filterValue, gioSmooth.x);
 			gioSmooth.y = smooth(gioData.y, filterValue, gioSmooth.y);
 			gioSmooth.z = smooth(gioData.z, filterValue, gioSmooth.z);
+
+			checkSample(gioSmooth.x, gioSmooth.y, gioSmooth.z);
 			
 			xSmooth.append(new Date().getTime(), gioSmooth.x/ONE_G);
 			ySmooth.append(new Date().getTime(), gioSmooth.y/ONE_G);
@@ -442,6 +405,7 @@
 		
 		onResize();
 		window.addEventListener('resize', onResize, false);
+	}
 	</script>>
 </body>
 </html>

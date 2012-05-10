@@ -5,6 +5,8 @@
 #include "iotest.h"
 
 #include "../lib/timer128.h"
+#include "../network/gswifi/gs.h"
+#include "ioinit.h"
 
 
 int main()
@@ -16,9 +18,10 @@ int main()
   // enable interrupts globally
   sei();
 
-  gs_Init(&Serial1);
+  gs_Init(&Serial1, "ecs-office-net", "");
 
-  connectionId = gs_open_connection("at+NCTCP=192.168.1.238,8125");
+  // connectionId = gs_open_connection("192.168.100.249", "8125");
+  connectionId = gs_open_connection("192.168.1.237", "8125");
 
   printf("\nInit Complete\n");
 
@@ -29,5 +32,3 @@ int main()
 
   return 0;
 }
-
-

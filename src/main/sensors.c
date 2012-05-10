@@ -1,6 +1,8 @@
 #include <avr/io.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include <util/delay.h>
 #include "../avr/driver/i2c.h"
 #include "../device/HMC5843/HMC5843.h"

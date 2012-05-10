@@ -156,15 +156,35 @@ function processHexData(data, time) {
 	queueData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4), time);
 }
 
+/*
+fs = require('fs');
+fs.readFile('pounce.txt', 'utf8', function(err, data) {
+	if(err) {
+		return console.log(err);
+	}
+	clearInterval(sampleDataInterval);
+	var dataArr = data.split('\n');
+	var i=0;
+	setInterval(function() {
+		var readings = dataArr[i].split(',');
+		i = (i+1)%dataArr.length;
+		gio.emit('gio', {
+			x: readings[0],
+			y: readings[1],
+			z: readings[2]
+		});
+	}, 20);
+});
+*/
+
 // TODO: remove this once we're ready to take in live data
 // Randomly generated data
 var sampleDataInterval = setInterval(function() {
-	gio.emit('gio', {
-		x: Math.floor(Math.random()*2000 - 1000),
-		y: Math.floor(Math.random()*32000 -16000),
-		z: Math.floor(Math.random()*2000 - 1000)
-	});
-}, 200);
+	emitData(Math.floor(Math.sin(new Date().getTime()/1000 + 1349087) * 16000),
+		Math.floor(Math.sin(new Date().getTime()/1000) * 16000),
+		Math.floor(Math.sin(new Date().getTime()/1000 + 2349087) * 16000)
+	);
+}, 50);
 
 /**
  Network server that listens for a stream of data

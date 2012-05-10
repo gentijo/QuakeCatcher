@@ -1,6 +1,8 @@
 #ifndef SENSORS_H_
 #define SENSORS_H_
 
+
+#include "global.h"
 // All the sensors 2 bytes per axis, 3 axis
 
 #define NUM_SENSORS 2
@@ -37,7 +39,7 @@ typedef struct struct_SensorReading {
 } SensorReading;
 
 typedef struct struct_DataPage {
-	uint8_t startTime[4];
+	u32 startTime;
 	uint8_t numReadings;
 	bool lockForSending;
 	SensorReading data[NUM_SENSORS * SAMPLES_PER_DATA_PAGE];

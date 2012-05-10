@@ -15,7 +15,7 @@
 
 int wifi_test()
 {
-  gs_Init(&Serial1);
+  gs_Init(&Serial1, "", "");
   gs_get_NTPTime();
 
   u08 sampleData[100] = "Hello World";
@@ -30,7 +30,7 @@ int wifi_test()
   int connid;
   for (int x=0; x< 3; x++)
   {
-    connid = gs_open_connection("at+NCTCP=192.168.1.238,8125");
+    connid = gs_open_connection("192.168.1.250", "8125");
     if (connid >= 0) break;
   }
 

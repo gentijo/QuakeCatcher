@@ -80,14 +80,14 @@
 			position: absolute;
 			bottom: 0px;
 			z-index: 1000;
-			height: 300px;
+			height: 200px;
 		}
 	</style>
 </head>
 <body>
 	<pre id="log"></pre>
 	<div id="graph">
-		<canvas id="chart" width="1000" height="300"></canvas>
+		<canvas id="chart" width="1000" height="200"></canvas>
 	</div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/lib/Three.js" type="text/javascript" charset="utf-8"></script>
@@ -135,16 +135,17 @@
 
 		var has_gl = 0;
 
-		var VIEW_ANGLE = 23,
+		var VIEW_ANGLE = 50,
 		    ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT,
-		    NEAR = 5,
-		    FAR = 3000;
+		    NEAR = 1,
+		    FAR = 5000;
 
 		var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 1024;
-		var ARROW_THICKNESS = 50;
-		var ARROW_LENGTH = 300;
-		var CONE_WIDTH = 72;
-		var CONE_HEIGHT = 120;
+		var ARROW_THICKNESS = 5;
+		var ARROW_LENGTH = 30;
+		var CONE_WIDTH = 7;
+		var CONE_HEIGHT = 12;
+		var CONE_SEGMENTS = 50;
 		var ONE_G = 16384; // One G force
 		
 		var enable3D = true; // TODO: toggle between 3d modes
@@ -171,42 +172,43 @@
 				ASPECT,
 				NEAR,
 				FAR );
-			camera.position.set( 700, 50, 1900);
+			//camera.position.set( 700, 50, 1900);
+			camera.position.set( 70, 30, 40);
 			scene.add(camera);
 			
 			// LIGHTS
-
-			var ambient = new THREE.AmbientLight( 0x444444 );
+			var ambient = new THREE.AmbientLight( 0x000000 );
 			scene.add( ambient );
 
 			directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-			directionalLight.position.set( 1, 1, 2 ).normalize();
+			directionalLight.position.set( 4, 1, 2 ).normalize();
 			scene.add( directionalLight );
 
-			pointLight = new THREE.PointLight( 0xffaa00, 0.8 );
+			pointLight = new THREE.PointLight( 0xffaa33, 0.8 );
 			pointLight.position.set( 0, 0, 0 );
 			scene.add( pointLight );
 
 			spotLight = new THREE.SpotLight();
 			spotLight.position.set(0,1500,1000);
 			spotLight.target.position.set(0, 0, 0);
-			spotLight.castShadow = true;
+			//spotLight.castShadow = true;
 			scene.add(spotLight)
 
 			// light representation
+/*
 			sphere = new THREE.SphereGeometry( 100, 16, 8, 1 );
 			lightMesh = new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xffaa00 } ) );
 			lightMesh.scale.set( 0.05, 0.05, 0.05 );
 			lightMesh.position = pointLight.position;
 			scene.add( lightMesh );
-
+*/
 			try {
 
 				webglRenderer = new THREE.WebGLRenderer( { antialias: true, clearAlpha: 1 } );
 				webglRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
 				webglRenderer.domElement.style.position = "relative";
 				webglRenderer.setClearColorHex(0xEEEEEE, 1.0);
-				
+			
 				container.appendChild( webglRenderer.domElement );
 				has_gl = 1;
 
@@ -233,9 +235,9 @@
 			scene.add(yBox);
 			scene.add(zBox);
 			
-			var xArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, 50, 50), new THREE.MeshLambertMaterial({color: 0xCE2626}));
-			var yArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, 50, 50), new THREE.MeshLambertMaterial({color: 0x51B863}));
-			var zArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, 50, 50), new THREE.MeshLambertMaterial({color: 0x0936AC}));
+			var xArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, CONE_SEGMENTS), new THREE.MeshPhongMaterial({color: 0xCE2626}));
+			var yArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, CONE_SEGMENTS), new THREE.MeshPhongMaterial({color: 0x51B863}));
+			var zArrow = new THREE.Mesh(new THREE.CylinderGeometry(0, CONE_WIDTH, CONE_HEIGHT, CONE_SEGMENTS), new THREE.MeshPhongMaterial({color: 0x0936AC}));
 
 			scene.add(xArrow);
 			scene.add(yArrow);
@@ -249,6 +251,10 @@
 				yArrow: yArrow,
 				zArrow: zArrow
 			}			
+
+			for(var id in axes) {
+				axes[id].matrixAutoUpdate = false;
+			}
 		}
 
 		function animate() {
@@ -267,15 +273,21 @@
 		var r=0;
 		
 		function render() {
-			var movementMultiplier = 3;
+			var movementMultiplier = .3;
+			/*
+			if(mouseX && mouseY) {
+				camera.position.x += ( mouseX*movementMultiplier - camera.position.x) * .05;
+				camera.position.y += ( - mouseY*movementMultiplier - camera.position.y) * .05;
+			}*/
 			
-			camera.position.x += ( mouseX*movementMultiplier - camera.position.x) * .05;
-			camera.position.y += ( - mouseY*movementMultiplier - camera.position.y) * .05;
+			camera.position.x += ( gioSmooth.x*0.003 - camera.position.x) * 0.05;
+			camera.position.y += ( gioSmooth.z*0.003 - camera.position.y) * 0.05;
 			
 			camera.lookAt(scene.position);
 
-			lightMesh.position.x = 700 * Math.cos(r);
-			lightMesh.position.z = 700 * Math.sin(r);
+			//lightMesh.position.x = 700 * Math.cos(r);
+			//lightMesh.position.z = 700 * Math.sin(r);
+			pointLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 
 			if(new Date().getTime() - gioTS > 200 && false) {
 				// TODO: Determine smoothing function
@@ -298,6 +310,10 @@
 				axes.zArrow.position.y = axes.z.position.y + ((gioSmooth.z < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
 				axes.zArrow.rotation.z = ((gioSmooth.z < 0)?-1:-2) * Math.PI;
 			}
+
+			for(var id in axes) {
+				axes[id].updateMatrix();
+			}
 			
 			r+=0.01
 
@@ -310,7 +326,7 @@
 		}
 	</script>
 	
-	<<script type="text/javascript" charset="utf-8">
+	<script type="text/javascript" charset="utf-8">
 	// Stats utilities
 	var Stats = {};
 	Stats.StandardDeviation = function(arr) {
@@ -331,8 +347,8 @@
 		var smoothie = new SmoothieChart({
 			minValue: -1.5,
 			maxValue: 1.5,
-			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(0,0,0,0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 2 },
-			labels: { fillStyle: 'rgba(0,0,0,0.5)' }
+			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 2 },
+			labels: { fillStyle: 'rgb(20,20,20)' }
 		});
 		var xLine = new TimeSeries();
 		var yLine = new TimeSeries();
@@ -387,7 +403,7 @@
 			gioSmooth.z = smooth(gioData.z, filterValue, gioSmooth.z);
 
 			checkSample(gioSmooth.x, gioSmooth.y, gioSmooth.z);
-			
+
 			xSmooth.append(new Date().getTime(), gioSmooth.x/ONE_G);
 			ySmooth.append(new Date().getTime(), gioSmooth.y/ONE_G);
 			zSmooth.append(new Date().getTime(), gioSmooth.z/ONE_G);
@@ -406,6 +422,6 @@
 		onResize();
 		window.addEventListener('resize', onResize, false);
 	}
-	</script>>
+	</script>
 </body>
 </html>

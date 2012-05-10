@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <util/delay.h>
+#include "global.h"
 
 #include "gs.h"
 

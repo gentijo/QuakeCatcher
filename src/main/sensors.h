@@ -1,6 +1,8 @@
 #ifndef SENSORS_H_
 #define SENSORS_H_
 
+
+#include "global.h"
 // All the sensors 2 bytes per axis, 3 axis
 
 #define NUM_SENSORS 2

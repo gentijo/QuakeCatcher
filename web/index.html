@@ -42,7 +42,8 @@
 			top: 50px;
 			text-align: left;
 			display: block;
-			z-index: 100
+			z-index: 100;
+			font-size: 10px;
 		}
 		#d {
 			text-align: center;
@@ -96,6 +97,46 @@
 	<script src="/lib/smoothie.js" type="text/javascript" charset="utf-8"></script>
 	<script>
 		/**
+		 Debug Logging
+		 **/
+		var Logger = function() {
+			var logElem = document.getElementById('log');
+			var logQueue = [];
+			var pageCounter = 0;
+			var queueSize = 50;
+			var dirty = false;
+			
+			return {
+				log: function() {
+					if(!this.enabled) { 
+						if(dirty) {
+							dirty = false;
+							logElem.innerHTML = '';
+						}
+						return; 
+					}
+					var mesg = [];
+					for (var i=0; i < arguments.length; i++) {
+						mesg.push(arguments[i]);
+					};
+					logQueue.push(mesg.join(','));
+					if(logQueue.length > queueSize) {
+						logQueue.shift();
+					}
+					if(pageCounter++%queueSize == 0) {
+						dirty = true;
+						logElem.innerHTML = logQueue.join('\n');
+					}
+				},
+				pad: function(str, padding) {
+					for (var i=0, padded=''; i < padding; padded+=' ', i++);
+					return (padded + str).substr(-padding)
+				},
+				enabled: false
+			}
+		}();
+
+		/**
 		 Create socket to receive data
 		 **/
 	
@@ -103,15 +144,15 @@
 		var gioData = { x: 0, y: 0, z: 0 };
 		var gioSmooth = { x: 0, y: 0, z: 0 };
 		var gioTS = new Date().getTime();
-
+		
 		socket.on('gio', function (data) {
-			//console.log(data);
-			if(data.x && data.y && data.z) {
+			if('x' in data && 'y' in data && 'z' in data) {
 				gioData.x = -data.x;
 				gioData.y = -data.y;
 				gioData.z = -data.z;
 				gioTS = new Date().getTime();
 			}
+			Logger.log(Logger.pad(gioData.x,8), Logger.pad(gioData.x,8), Logger.pad(gioData.x,8));
 		});
 	
 		/**

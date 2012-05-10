@@ -30,7 +30,7 @@ int wifi_test()
   int connid;
   for (int x=0; x< 3; x++)
   {
-    connid = gs_open_connection("at+NCTCP=192.168.1.250,8125");
+    connid = gs_open_connection("at+NCTCP=192.168.1.238,8125");
     if (connid >= 0) break;
   }
 
@@ -39,6 +39,7 @@ int wifi_test()
     gs_send_data(connid, &buf, NULL );
    // gs_close_connection(connid);
   }
+
 
 
   uartLoopBack();

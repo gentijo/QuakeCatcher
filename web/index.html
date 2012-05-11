@@ -236,6 +236,10 @@
 			directionalLight.position.set( 4, 1, 2 ).normalize();
 			scene.add( directionalLight );
 
+			directionalLight2 = new THREE.DirectionalLight( 0xffffff, 0.5 );
+			directionalLight2.position.set( -4, -1, -2 ).normalize();
+			scene.add( directionalLight2 );
+
 			pointLight = new THREE.PointLight( 0xffaa33, 0.8 );
 			pointLight.position.set( 0, 0, 0 );
 			scene.add( pointLight );
@@ -280,6 +284,7 @@
 		function createMeasureScene() {
 			
 			var xBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_LENGTH,ARROW_THICKNESS,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0xCE2626}));
+			xBox.position.y += 0.01;
 			var yBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_THICKNESS,ARROW_LENGTH), new THREE.MeshLambertMaterial({color: 0x51B863}));
 			var zBox = new THREE.Mesh(new THREE.CubeGeometry(ARROW_THICKNESS,ARROW_LENGTH,ARROW_THICKNESS), new THREE.MeshLambertMaterial({color: 0x0936AC}));
 			
@@ -332,9 +337,10 @@
 				camera.position.y += ( mouseY*movementMultiplier - camera.position.y) * .05;
 			} else if(useAutoCamera) {
 				camera.position.x += ( gioSmooth.x*0.005 - camera.position.x) * 0.05;
-				camera.position.y += ( gioSmooth.z*0.005 - camera.position.y) * 0.05;
+				camera.position.y += ( gioSmooth.z*0.002 - camera.position.y) * 0.05;
 			}
 			
+			camera.position.normalize().multiplyScalar(100);
 			camera.lookAt(scene.position);
 
 			//lightMesh.position.x = 700 * Math.cos(r);

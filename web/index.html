@@ -144,6 +144,8 @@
 		var gioData = { x: 0, y: 0, z: 0 };
 		var gioSmooth = { x: 0, y: 0, z: 0 };
 		var gioTS = new Date().getTime();
+		var samplesPerPage = 50; // How many x,y,z accelerometer readings do we get per second?
+		var sampleIntervalTime = Math.floor(1000/samplesPerPage);
 		
 		socket.on('gio', function (data) {
 			if('x' in data && 'y' in data && 'z' in data) {
@@ -152,6 +154,7 @@
 				gioData.z = -data.z;
 				gioTS = new Date().getTime();
 			}
+			updateLines();
 			Logger.log(Logger.pad(gioData.x,8), Logger.pad(gioData.x,8), Logger.pad(gioData.x,8));
 		}).on('giostatus', function(data) {
 			if(data.message) {
@@ -390,22 +393,26 @@
 
 	if(enableGraph) {
 		var smoothie = new SmoothieChart({
-			minValue: -1.5,
-			maxValue: 1.5,
+			fps: 60,
+			interpolation: "line",
 			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 2 },
 			labels: { fillStyle: 'rgb(20,20,20)' }
 		});
-		var xLine = new TimeSeries();
-		var yLine = new TimeSeries();
-		var zLine = new TimeSeries();
+		var timeLineOptions = {
+			resetBoundsInterval: 1000
+		}
+		
+		var xLine = new TimeSeries(timeLineOptions);
+		var yLine = new TimeSeries(timeLineOptions);
+		var zLine = new TimeSeries(timeLineOptions);
 
 		smoothie.addTimeSeries(xLine, { strokeStyle: '#CE2626', lineWidth: 1 });
 		smoothie.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 1 });
 		smoothie.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 1 });
 		
-		var xSmooth = new TimeSeries();
-		var ySmooth = new TimeSeries();
-		var zSmooth = new TimeSeries();
+		var xSmooth = new TimeSeries(timeLineOptions);
+		var ySmooth = new TimeSeries(timeLineOptions);
+		var zSmooth = new TimeSeries(timeLineOptions);
 
 		smoothie.addTimeSeries(xSmooth, { strokeStyle: '#801818', lineWidth: 2 });
 		smoothie.addTimeSeries(ySmooth, { strokeStyle: '#367C42', lineWidth: 2 });
@@ -457,8 +464,7 @@
 			yLine.append(new Date().getTime(), gioData.y/ONE_G);
 			zLine.append(new Date().getTime(), gioData.z/ONE_G);
 		}
-		setInterval(updateLines, 50);
-		smoothie.streamTo(document.getElementById('chart'), 50);
+		smoothie.streamTo(document.getElementById('chart'), sampleIntervalTime);
 
 		function onResize() {
 			document.getElementById('chart').width = window.innerWidth;

@@ -191,13 +191,12 @@ var sampleDataInterval = setInterval(function() {
 net.createServer(function (c) {
 	c.write('Catch some Quakes!\r\n');
 	c.pipe(c);
-	console.log('Connected!');
+	emitStatus('Device Connected');
 	c.on('data', function(chunk) {
 		//console.log('incoming chunk!', chunk, chunk+'');
 		var set = String(chunk).split('\n');
-		var time = Math.floor(1000/set.length);
 		for(var i=0; i<set.length; i++) {
-			processHexData(set[i], time);
+			processHexData(set[i]);
 		}
 	});
 	c.on('end', function() {

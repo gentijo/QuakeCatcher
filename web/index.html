@@ -33,9 +33,6 @@
 		canvas {
 			pointer-events: none;
 			z-index: 10;
-			position: absolute;
-			top: 0px;
-			left: 0px;
 		}
 		#log {
 			position: absolute;
@@ -81,14 +78,22 @@
 			position: absolute;
 			bottom: 0px;
 			z-index: 1000;
-			height: 200px;
+			height: 100px;
+			width: 100%;
+			text-align: center;
+		}
+		.graphs {
+			display: inline-block;
+			margin: 0;
 		}
 	</style>
 </head>
 <body>
 	<pre id="log"></pre>
 	<div id="graph">
-		<canvas id="chart" width="1000" height="200"></canvas>
+		<canvas class="graphs" id="chartx" width="200" height="100"></canvas>
+		<canvas class="graphs" id="charty" width="200" height="100"></canvas>
+		<canvas class="graphs" id="chartz" width="200" height="100"></canvas>
 	</div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/lib/Three.js" type="text/javascript" charset="utf-8"></script>
@@ -392,12 +397,16 @@
 	}
 
 	if(enableGraph) {
-		var smoothie = new SmoothieChart({
+		var smoothieOptions = {
 			fps: 60,
 			interpolation: "line",
 			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 2 },
 			labels: { fillStyle: 'rgb(20,20,20)' }
-		});
+		};
+		var smoothieX = new SmoothieChart(smoothieOptions);
+		var smoothieY = new SmoothieChart(smoothieOptions);
+		var smoothieZ = new SmoothieChart(smoothieOptions);
+
 		var timeLineOptions = {
 			resetBoundsInterval: 1000
 		}
@@ -406,17 +415,17 @@
 		var yLine = new TimeSeries(timeLineOptions);
 		var zLine = new TimeSeries(timeLineOptions);
 
-		smoothie.addTimeSeries(xLine, { strokeStyle: '#CE2626', lineWidth: 1 });
-		smoothie.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 1 });
-		smoothie.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 1 });
+		smoothieX.addTimeSeries(xLine, { strokeStyle: '#CE2626', lineWidth: 1 });
+		smoothieY.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 1 });
+		smoothieZ.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 1 });
 		
 		var xSmooth = new TimeSeries(timeLineOptions);
 		var ySmooth = new TimeSeries(timeLineOptions);
 		var zSmooth = new TimeSeries(timeLineOptions);
 
-		smoothie.addTimeSeries(xSmooth, { strokeStyle: '#801818', lineWidth: 2 });
-		smoothie.addTimeSeries(ySmooth, { strokeStyle: '#367C42', lineWidth: 2 });
-		smoothie.addTimeSeries(zSmooth, { strokeStyle: '#06216A', lineWidth: 2 });
+		smoothieX.addTimeSeries(xSmooth, { strokeStyle: '#801818', lineWidth: 2 });
+		smoothieY.addTimeSeries(ySmooth, { strokeStyle: '#367C42', lineWidth: 2 });
+		smoothieZ.addTimeSeries(zSmooth, { strokeStyle: '#06216A', lineWidth: 2 });
 
 		function smooth(data, filterValue, smoothValue) {
 			return (data*(1-filterValue) + smoothValue*filterValue);
@@ -464,14 +473,9 @@
 			yLine.append(new Date().getTime(), gioData.y/ONE_G);
 			zLine.append(new Date().getTime(), gioData.z/ONE_G);
 		}
-		smoothie.streamTo(document.getElementById('chart'), sampleIntervalTime);
-
-		function onResize() {
-			document.getElementById('chart').width = window.innerWidth;
-		}
-		
-		onResize();
-		window.addEventListener('resize', onResize, false);
+		smoothieX.streamTo(document.getElementById('chartx'), sampleIntervalTime);
+		smoothieY.streamTo(document.getElementById('charty'), sampleIntervalTime);
+		smoothieZ.streamTo(document.getElementById('chartz'), sampleIntervalTime);
 	}
 	</script>
 </body>

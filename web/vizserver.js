@@ -18,7 +18,6 @@ var http = require('http');
 var net = require('net');
 var path = require('path');
 var fs = require('fs');
-var SerialPort = require("serialport");
 
 /** 
  Create Web Server
@@ -211,6 +210,7 @@ console.log('Data Server listening on ' + hostname + ':8125');
  **/
 
 try {
+	var SerialPort = require("serialport");
 	var serialPort = new SerialPort.SerialPort(serialPath, { parser: SerialPort.parsers.readline('\r\n') });
 
 	var buffer = new Buffer(6);

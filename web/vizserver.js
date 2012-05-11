@@ -12,6 +12,7 @@ var webport = 8124;
 var dataport = 8125;
 var hostname = process.argv[2] || '127.0.0.1';
 var serialPath = "/dev/tty.SLAB_USBtoUART";
+var samplesPerPage = 50; // How many x,y,z accelerometer readings do we get per second?
 
 var http = require('http');
 var net = require('net');
@@ -104,44 +105,37 @@ var gio = io.of('/gio').on('connection', function(socket) {
 	});
 });
 
+var readingsEmitted = 0; //Count how many sets we've sent
 function emitData(x, y, z) {
 	gio.emit('gio', {
 		x: x,
 		y: y,
 		z: z
 	});
+	readingsEmitted++;
 }
 
 var dataQueue = [];
 var queueTimer = -1;
 
-function queueData(x ,y, z, time) {
-	if(!time) {
-		emitData(x, y, z);
-		return;
-	}
+function queueData(x ,y, z) {
 	dataQueue.push({
 		x: x,
 		y: y,
-		z: z,
-		time: time
+		z: z
 	});
-	if(queueTimer == -1) {
-		queueTimer = setTimeout(checkQueue, time);
-	}
 }
 
 function checkQueue() {
-	var data = dataQueue.shift();
-	emitData(data.x, data.y, data.z);
 	if(dataQueue.length) {
-		queueTimer = setTimeout(checkQueue, dataQueue[0].time);
-	} else {
-		queueTimer = -1;
+		var data = dataQueue.shift();
+		emitData(data.x, data.y, data.z);
 	}
 }
 
-function processHexData(data, time) {
+queueTimer = setInterval(checkQueue, Math.floor(1000/sampleDataInterval));
+
+function processHexData(data, emitImmediately) {
 	if(!data) return;
 	var buffer = new Buffer(6);
 	for (var i=0; i < 6; i++) {
@@ -152,8 +146,11 @@ function processHexData(data, time) {
 		return buffer.readInt16BE(offset);
 	}
 
-	console.log(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
-	queueData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4), time);
+	if(emitImmediately) {
+		emitData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+	} else {
+		queueData(readInt(buffer, 0),readInt(buffer, 2),readInt(buffer, 4));
+	}
 }
 
 /*
@@ -195,7 +192,7 @@ net.createServer(function (c) {
 	c.pipe(c);
 	console.log('Connected!');
 	c.on('data', function(chunk) {
-		console.log('incoming chunk!', chunk, chunk+'');
+		//console.log('incoming chunk!', chunk, chunk+'');
 		var set = String(chunk).split('\n');
 		var time = Math.floor(1000/set.length);
 		for(var i=0; i<set.length; i++) {

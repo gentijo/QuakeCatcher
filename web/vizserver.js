@@ -13,6 +13,7 @@ var dataport = 8125;
 var hostname = process.argv[2] || '127.0.0.1';
 var serialPath = "/dev/tty.SLAB_USBtoUART";
 var samplesPerPage = 50; // How many x,y,z accelerometer readings do we get per second?
+var sampleIntervalTime = Math.floor(1000/samplesPerPage);
 
 var http = require('http');
 var net = require('net');
@@ -134,7 +135,7 @@ function checkQueue() {
 	}
 }
 
-queueTimer = setInterval(checkQueue, Math.floor(1000/sampleDataInterval));
+queueTimer = setInterval(checkQueue, sampleIntervalTime);
 
 function processHexData(data, emitImmediately) {
 	if(!data) return;
@@ -163,7 +164,7 @@ fs.readFile('pounce.txt', 'utf8', function(err, data) {
 	clearInterval(sampleDataInterval);
 	var dataArr = data.split('\n');
 	var i=0;
-	setInterval(function() {
+	sampleDataInterval = setInterval(function() {
 		var readings = dataArr[i].split(',');
 		i = (i+1)%dataArr.length;
 		gio.emit('gio', {
@@ -171,7 +172,7 @@ fs.readFile('pounce.txt', 'utf8', function(err, data) {
 			y: readings[1],
 			z: readings[2]
 		});
-	}, 20);
+	}, sampleIntervalTime);
 });
 */
 
@@ -182,7 +183,7 @@ var sampleDataInterval = setInterval(function() {
 		Math.floor(Math.sin(new Date().getTime()/1000) * 16000),
 		Math.floor(Math.sin(new Date().getTime()/1000 + 2349087) * 16000)
 	);
-}, 50);
+}, sampleIntervalTime);
 
 /**
  Network server that listens for a stream of data

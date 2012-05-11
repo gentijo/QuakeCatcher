@@ -422,15 +422,25 @@
 		var smoothieZ = new SmoothieChart(smoothieOptions);
 
 		var timeLineOptions = {
-			resetBoundsInterval: 500
+			resetBoundsInterval: 100
 		}
 		
 		TimeSeries.prototype.resetBounds = function() {
 			var range = 0.1;
-			for (var i=0, sum=0; i < this.data.length; sum += this.data[i++][1]);
+			var min = 0, max = 0;
+			for (var i=0, sum=0; i < this.data.length; i++) {
+				min = Math.min(min, this.data[i][1]);
+				max = Math.max(max, this.data[i][1]);
+				sum += this.data[i][1];
+			}
 			var mean = sum/this.data.length
-			this.minValue = (mean-range);
-			this.maxValue = (mean+range);
+			if(max - min > range*5) {
+				this.minValue = min;
+				this.maxValue = max;
+			} else {
+				this.minValue = (mean-range);
+				this.maxValue = (mean+range);
+			}
 		}
 
 		TimeSeries.prototype.append = function(timestamp, value) {

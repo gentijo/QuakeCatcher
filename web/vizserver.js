@@ -96,13 +96,15 @@ console.log('Web Server running at http://' + hostname + ':' + webport + '/');
 var io = require('socket.io').listen(server);
 io.set("log level", 0);
 var gio = io.of('/gio').on('connection', function(socket) {
-	socket.emit('gio', {
-		online: 'online'
-	});
-	socket.on('sync', function(data) {
-		console.log(data);
-	});
+	emitStatus('WebSocket connected');
 });
+
+function emitStatus(message) {
+	gio.emit('giostatus', {
+		message: message
+	});
+	console.log('STATUS: ' + message);
+}
 
 var readingsEmitted = 0; //Count how many sets we've sent
 function emitData(x, y, z) {

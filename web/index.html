@@ -153,7 +153,11 @@
 				gioTS = new Date().getTime();
 			}
 			Logger.log(Logger.pad(gioData.x,8), Logger.pad(gioData.x,8), Logger.pad(gioData.x,8));
-		});
+		}).on('giostatus', function(data) {
+			if(data.message) {
+				Logger.log('STATUS: ' + data.message);
+			}
+		})
 	
 		/**
 		 ThreeJS/WebGL code to render visual representation of accelerometer data.

@@ -202,6 +202,8 @@
 		var enableGraph = true;
 
 		if(enable3D) {
+			document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+			document.addEventListener( 'mouseup', onDocumentMouseUp, false );
 			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 
 			init();
@@ -324,42 +326,35 @@
 		
 		function render() {
 			var movementMultiplier = .3;
-			/*
-			if(mouseX && mouseY) {
-				camera.position.x += ( mouseX*movementMultiplier - camera.position.x) * .05;
-				camera.position.y += ( - mouseY*movementMultiplier - camera.position.y) * .05;
-			}*/
-			
-			camera.position.x += ( gioSmooth.x*0.003 - camera.position.x) * 0.05;
-			camera.position.y += ( gioSmooth.z*0.003 - camera.position.y) * 0.05;
+
+			if(mouseX && mouseY && mouseDown) {
+				camera.position.x += ( - mouseX*movementMultiplier - camera.position.x) * .05;
+				camera.position.y += ( mouseY*movementMultiplier - camera.position.y) * .05;
+			} else if(useAutoCamera) {
+				camera.position.x += ( gioSmooth.x*0.005 - camera.position.x) * 0.05;
+				camera.position.y += ( gioSmooth.z*0.005 - camera.position.y) * 0.05;
+			}
 			
 			camera.lookAt(scene.position);
 
 			//lightMesh.position.x = 700 * Math.cos(r);
 			//lightMesh.position.z = 700 * Math.sin(r);
-			pointLight.position.set(camera.position.x, camera.position.y, camera.position.z);
+			pointLight.position.set(camera.position.x, camera.position.y, camera.position.z).normalize().multiplyScalar(20);
 
-			if(new Date().getTime() - gioTS > 200 && false) {
-				// TODO: Determine smoothing function
-				axes.x.scale.x = Math.max(axes.x.scale.x-0.01,0);
-				axes.y.scale.y = Math.max(axes.y.scale.y-0.01,0);
-				axes.z.scale.z = Math.max(axes.z.scale.z-0.01,0);
-			} else {
-				axes.x.position.x = gioSmooth.x/ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
-				axes.xArrow.visible = (Math.abs(gioSmooth.x/ONE_G) > 0.1);
-				axes.xArrow.position.x = axes.x.position.x + ((gioSmooth.x < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
-				axes.xArrow.rotation.z = ((gioSmooth.x < 0)?1:-1) * Math.PI / 2;
-				
-				axes.y.position.z = gioSmooth.y / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
-				axes.yArrow.visible = (Math.abs(gioSmooth.y/ONE_G) > 0.1);
-				axes.yArrow.position.z = axes.y.position.z + ((gioSmooth.y < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
-				axes.yArrow.rotation.x = ((gioSmooth.y < 0)?-1:1) * Math.PI / 2;
+			axes.x.position.x = gioSmooth.x/ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
+			axes.xArrow.visible = (Math.abs(gioSmooth.x/ONE_G) > 0.1);
+			axes.xArrow.position.x = axes.x.position.x + ((gioSmooth.x < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
+			axes.xArrow.rotation.z = ((gioSmooth.x < 0)?1:-1) * Math.PI / 2;
+			
+			axes.y.position.z = gioSmooth.y / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
+			axes.yArrow.visible = (Math.abs(gioSmooth.y/ONE_G) > 0.1);
+			axes.yArrow.position.z = axes.y.position.z + ((gioSmooth.y < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
+			axes.yArrow.rotation.x = ((gioSmooth.y < 0)?-1:1) * Math.PI / 2;
 
-				axes.z.position.y = gioSmooth.z / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
-				axes.zArrow.visible = (Math.abs(gioSmooth.z/ONE_G) > 0.1);
-				axes.zArrow.position.y = axes.z.position.y + ((gioSmooth.z < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
-				axes.zArrow.rotation.z = ((gioSmooth.z < 0)?-1:-2) * Math.PI;
-			}
+			axes.z.position.y = gioSmooth.z / ONE_G * (ARROW_LENGTH/2 - ARROW_THICKNESS / 2);
+			axes.zArrow.visible = (Math.abs(gioSmooth.z/ONE_G) > 0.1);
+			axes.zArrow.position.y = axes.z.position.y + ((gioSmooth.z < 0)?-1:1) * (ARROW_LENGTH/2 + CONE_HEIGHT/2);
+			axes.zArrow.rotation.z = ((gioSmooth.z < 0)?-1:-2) * Math.PI;
 
 			for(var id in axes) {
 				axes[id].updateMatrix();
@@ -373,6 +368,22 @@
 		function onDocumentMouseMove(event) {
 			mouseX = (event.clientX - windowHalfX);
 			mouseY = (event.clientY - windowHalfY);
+		}
+		
+		var mouseDown = false;
+		var mouseUpTimer = -1;
+		var autoCameraDelay = 2000; // How many ms to wait before returning to auto camera mode
+		var useAutoCamera = true;
+		function onDocumentMouseDown(event) {
+			clearTimeout(mouseUpTimer);
+			mouseDown = true;
+			useAutoCamera = false;
+		}
+		
+		function onDocumentMouseUp(event) {
+			mouseDown = false;
+			clearTimeout(mouseUpTimer);
+			mouseUpTimer = setTimeout(function() { useAutoCamera = true; }, autoCameraDelay);
 		}
 	</script>
 	

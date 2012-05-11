@@ -98,6 +98,9 @@ var io = require('socket.io').listen(server);
 io.set("log level", 0);
 var gio = io.of('/gio').on('connection', function(socket) {
 	emitStatus('WebSocket connected');
+	socket.on('disconnect', function() {
+		console.log('WebSocket Disconnected');
+	});
 });
 
 function emitStatus(message) {

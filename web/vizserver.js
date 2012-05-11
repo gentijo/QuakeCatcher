@@ -203,7 +203,7 @@ net.createServer(function (c) {
 	})
 	clearInterval(sampleDataInterval); // Stop the sample data generator
 }).listen(dataport, hostname);
-console.log('Data Server listening on ' + hostname + ':8125');
+console.log('Data Server listening on ' + hostname + ':' + dataport);
 
 /**
  Serial Port Listener for debugging frame packets from sensor

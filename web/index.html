@@ -77,23 +77,20 @@
 		#graph {
 			position: absolute;
 			bottom: 0px;
+			right: 0px;
 			z-index: 1000;
-			height: 100px;
-			width: 100%;
-			text-align: center;
 		}
 		.graphs {
-			display: inline-block;
-			margin: 0;
+			display: block;
 		}
 	</style>
 </head>
 <body>
 	<pre id="log"></pre>
 	<div id="graph">
-		<canvas class="graphs" id="chartx" width="200" height="100"></canvas>
-		<canvas class="graphs" id="charty" width="200" height="100"></canvas>
-		<canvas class="graphs" id="chartz" width="200" height="100"></canvas>
+		<canvas class="graphs" id="chartx" width="200" height="200"></canvas>
+		<canvas class="graphs" id="charty" width="200" height="200"></canvas>
+		<canvas class="graphs" id="chartz" width="200" height="200"></canvas>
 	</div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/lib/Three.js" type="text/javascript" charset="utf-8"></script>
@@ -400,7 +397,7 @@
 		var smoothieOptions = {
 			fps: 60,
 			interpolation: "line",
-			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 2 },
+			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 0 },
 			labels: { fillStyle: 'rgb(20,20,20)' }
 		};
 		var smoothieX = new SmoothieChart(smoothieOptions);
@@ -408,7 +405,19 @@
 		var smoothieZ = new SmoothieChart(smoothieOptions);
 
 		var timeLineOptions = {
-			resetBoundsInterval: 1000
+			resetBoundsInterval: 500
+		}
+		
+		TimeSeries.prototype.resetBounds = function() {
+			var range = 0.1;
+			for (var i=0, sum=0; i < this.data.length; sum += this.data[i++][1]);
+			var mean = sum/this.data.length
+			this.minValue = (mean-range);
+			this.maxValue = (mean+range);
+		}
+
+		TimeSeries.prototype.append = function(timestamp, value) {
+		  this.data.push([timestamp, value]);
 		}
 		
 		var xLine = new TimeSeries(timeLineOptions);
@@ -419,14 +428,6 @@
 		smoothieY.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 1 });
 		smoothieZ.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 1 });
 		
-		var xSmooth = new TimeSeries(timeLineOptions);
-		var ySmooth = new TimeSeries(timeLineOptions);
-		var zSmooth = new TimeSeries(timeLineOptions);
-
-		smoothieX.addTimeSeries(xSmooth, { strokeStyle: '#801818', lineWidth: 2 });
-		smoothieY.addTimeSeries(ySmooth, { strokeStyle: '#367C42', lineWidth: 2 });
-		smoothieZ.addTimeSeries(zSmooth, { strokeStyle: '#06216A', lineWidth: 2 });
-
 		function smooth(data, filterValue, smoothValue) {
 			return (data*(1-filterValue) + smoothValue*filterValue);
 		}
@@ -465,10 +466,6 @@
 
 			checkSample(gioSmooth.x, gioSmooth.y, gioSmooth.z);
 
-			xSmooth.append(new Date().getTime(), gioSmooth.x/ONE_G);
-			ySmooth.append(new Date().getTime(), gioSmooth.y/ONE_G);
-			zSmooth.append(new Date().getTime(), gioSmooth.z/ONE_G);
-			
 			xLine.append(new Date().getTime(), gioData.x/ONE_G);
 			yLine.append(new Date().getTime(), gioData.y/ONE_G);
 			zLine.append(new Date().getTime(), gioData.z/ONE_G);
@@ -476,6 +473,15 @@
 		smoothieX.streamTo(document.getElementById('chartx'), sampleIntervalTime);
 		smoothieY.streamTo(document.getElementById('charty'), sampleIntervalTime);
 		smoothieZ.streamTo(document.getElementById('chartz'), sampleIntervalTime);
+		
+		function onResize() {
+			document.getElementById('chartx').height = window.innerHeight / 3;
+			document.getElementById('charty').height = window.innerHeight / 3;
+			document.getElementById('chartz').height = window.innerHeight / 3;
+		}
+		
+		window.addEventListener('resize', onResize, false);
+		onResize();
 	}
 	</script>
 </body>

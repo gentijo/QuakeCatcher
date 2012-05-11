@@ -200,7 +200,7 @@ net.createServer(function (c) {
 		}
 	});
 	c.on('end', function() {
-		console.log('Connection Ended');
+		emitStatus('Device Disconnected');
 	})
 	clearInterval(sampleDataInterval); // Stop the sample data generator
 }).listen(dataport, hostname);

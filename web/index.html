@@ -12,8 +12,11 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<style>
 		body, html {
-			background:#fff;
-			color:#000;
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			user-select: none;
+			background-image: -webkit-radial-gradient(center, ellipse farthest-corner, #EEEEEE 0%, #EDE574 100%);
+			background-image: radial-gradient(center, ellipse farthest-corner, #EEEEEE 0%, #EDE574 100%);
 			padding:0;
 			margin:0;
 			overflow:hidden;
@@ -83,14 +86,31 @@
 		.graphs {
 			display: block;
 		}
+		.graphwrapper {
+			position: relative;
+		}
+		.axislabel {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 100px;
+			height: 100px;
+			margin-left: -50px;
+			margin-top: -50px;
+			font-size: 100px;
+			font-weight: bold;
+		}
+		.labelx { color: rgba(206,  38,  38, 0.1); }
+		.labely { color: rgba( 81, 184,  99, 0.1); }
+		.labelz { color: rgba(  9,  54, 172, 0.1); }
 	</style>
 </head>
 <body>
 	<pre id="log"></pre>
 	<div id="graph">
-		<canvas class="graphs" id="chartx" width="200" height="200"></canvas>
-		<canvas class="graphs" id="charty" width="200" height="200"></canvas>
-		<canvas class="graphs" id="chartz" width="200" height="200"></canvas>
+		<div class="graphwrapper"><canvas class="graphs" id="chartx" width="200" height="200"></canvas><div class="axislabel labelx">X</div></div>
+		<div class="graphwrapper"><canvas class="graphs" id="charty" width="200" height="200"></canvas><div class="axislabel labely">Y</div></div>
+		<div class="graphwrapper"><canvas class="graphs" id="chartz" width="200" height="200"></canvas><div class="axislabel labelz">Z</div></div>
 	</div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/lib/Three.js" type="text/javascript" charset="utf-8"></script>
@@ -232,17 +252,17 @@
 			var ambient = new THREE.AmbientLight( 0x000000 );
 			scene.add( ambient );
 
-			directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+			directionalLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
 			directionalLight.position.set( 4, 1, 2 ).normalize();
 			scene.add( directionalLight );
 
-			directionalLight2 = new THREE.DirectionalLight( 0xffffff, 0.5 );
-			directionalLight2.position.set( -4, -1, -2 ).normalize();
+			directionalLight2 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+			directionalLight2.position.set( -4, -1, 4 ).normalize();
 			scene.add( directionalLight2 );
 
 			pointLight = new THREE.PointLight( 0xffaa33, 0.8 );
 			pointLight.position.set( 0, 0, 0 );
-			scene.add( pointLight );
+			//scene.add( pointLight );
 
 			spotLight = new THREE.SpotLight();
 			spotLight.position.set(0,1500,1000);
@@ -260,10 +280,9 @@
 */
 			try {
 
-				webglRenderer = new THREE.WebGLRenderer( { antialias: true, clearAlpha: 1 } );
+				webglRenderer = new THREE.WebGLRenderer( { antialias: true, clearAlpha: 0, clearColor: 0x000000 } );
 				webglRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
 				webglRenderer.domElement.style.position = "relative";
-				webglRenderer.setClearColorHex(0xEEEEEE, 1.0);
 			
 				container.appendChild( webglRenderer.domElement );
 				has_gl = 1;
@@ -414,7 +433,7 @@
 		var smoothieOptions = {
 			fps: 60,
 			interpolation: "line",
-			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 1000, verticalSections: 0 },
+			grid: { fillStyle: 'rgba(255,255,255,0)', strokeStyle: 'rgba(20,20,20, 0.1)', lineWidth: 1, millisPerLine: 2000, verticalSections: 0 },
 			labels: { fillStyle: 'rgb(20,20,20)' }
 		};
 		var smoothieX = new SmoothieChart(smoothieOptions);

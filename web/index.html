@@ -28,10 +28,7 @@
 			color: skyblue
 		}
 		.container {
-			position: relative;
-			top: 0px;
-			left: 0px;
-			border: 1px solid green;
+			position: absolute;
 		}
 		canvas {
 			pointer-events: none;
@@ -198,6 +195,8 @@
 
 		var SCREEN_WIDTH = window.innerWidth;
 		var SCREEN_HEIGHT = window.innerHeight;
+		var CANVAS_HEIGHT = Math.min(800, SCREEN_HEIGHT);
+		var CANVAS_WIDTH = Math.min(CANVAS_HEIGHT, SCREEN_WIDTH);
 		var FLOOR = -250;
 
 		var container, stats;
@@ -214,7 +213,7 @@
 		var has_gl = 0;
 
 		var VIEW_ANGLE = 50,
-		    ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT,
+		    ASPECT = CANVAS_WIDTH / CANVAS_HEIGHT,
 		    NEAR = 1,
 		    FAR = 5000;
 
@@ -289,8 +288,7 @@
 			try {
 
 				webglRenderer = new THREE.WebGLRenderer( { antialias: true, clearAlpha: 0, clearColor: 0x000000 } );
-				webglRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
-				webglRenderer.domElement.style.position = "relative";
+				webglRenderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
 			
 				container.appendChild( webglRenderer.domElement );
 				has_gl = 1;
@@ -532,6 +530,9 @@
 			document.getElementById('chartx').height = window.innerHeight / 3;
 			document.getElementById('charty').height = window.innerHeight / 3;
 			document.getElementById('chartz').height = window.innerHeight / 3;
+			
+			container.style.top = (window.innerHeight - CANVAS_HEIGHT)/2 + 'px';
+			container.style.left = (window.innerWidth - CANVAS_WIDTH)/2 + 'px';
 		}
 		
 		window.addEventListener('resize', onResize, false);

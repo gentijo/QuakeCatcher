@@ -107,6 +107,18 @@
 			background: url('giobot.png');
 			bottom: 0px;
 		}
+		@-webkit-keyframes bounce { 
+		    0% { -webkit-transform: translateY(-30px); }
+		    20% { -webkit-transform: translateY(0px); }
+		    40% { -webkit-transform: translateY(-15px); }
+		    60% { -webkit-transform: translateY(0px); }
+		    80% { -webkit-transform: translateY(-5px); }
+		    100% { -webkit-transform: translateY(0px); }
+		}
+		.quakealert {
+		    -webkit-animation: bounce .5s ease 1 normal;
+		}
+		
 	</style>
 </head>
 <body>
@@ -505,9 +517,19 @@
 				}
 			}
 			if(maxDeviation > DEVIATION_THRESHOLD) {
-				console.log('QUAKE', maxDeviation);
+				//console.log('QUAKE', maxDeviation);
+				alertQuake();
 			}
 			return maxDeviation;
+		}
+		
+		var alertTimeout = -1;
+		function alertQuake() {
+			clearTimeout(alertTimeout);
+			document.getElementById('logo').className = 'quakealert';
+			alertTimeout = setTimeout(function() {
+				document.getElementById('logo').className = '';
+			}, 500);
 		}
 		
 		function updateLines() {

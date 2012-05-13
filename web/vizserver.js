@@ -8,8 +8,8 @@
 
  **/
 
-var webport = 8124;
-var dataport = 8125;
+var webport = process.argv[3] || 8124;
+var dataport = process.argv[4] || 8125;
 var hostname = process.argv[2] || '127.0.0.1';
 var serialPath = "/dev/tty.SLAB_USBtoUART";
 var samplesPerPage = 50; // How many x,y,z accelerometer readings do we get per second?

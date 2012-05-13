@@ -154,12 +154,17 @@
 	<script src="lib/Box2dWeb-2.1.a.3.min.js" type="text/javascript"></script>
 	<script type="text/javascript" charset="utf-8">
 		var FORCE_MULTIPLIER = 1;
+		var MAX_FORCE = 30;
 		var METER = 100; // how many pixels is a METER
 		var NUM_BOXES = 0;
 		var STAGE_WIDTH = 600;
 		var STAGE_HEIGHT = 400;
 		var BOT_WIDTH = 216;
 		var BOT_HEIGHT = 216;
+		
+		var DENSITY = 1;
+		var FRICTION = 1;
+		var RESTITUTION = 0.2;
 	
 		var b2Vec2 = Box2D.Common.Math.b2Vec2,
 			b2BodyDef = Box2D.Dynamics.b2BodyDef,
@@ -183,9 +188,9 @@
 			world = new b2World(new b2Vec2(0, 10), true);
 
 			fixDef = new b2FixtureDef();
-			fixDef.density = 1.0;
-			fixDef.friction = 1;
-			//fixDef.restitution = 0.2;
+			fixDef.density = DENSITY;
+			fixDef.friction = FRICTION;
+			fixDef.restitution = RESTITUTION;
 
 			bodyDef = new b2BodyDef();
 
@@ -261,6 +266,7 @@
 		}
 		
 		function applyForce(force) {
+			var force = Math.min(MAX_FORCE, force);
 			up = new b2Vec2(0,-force);
 			bodies[0].ApplyImpulse(up, bodies[0].GetWorldCenter());
 		}

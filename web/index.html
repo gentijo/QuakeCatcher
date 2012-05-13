@@ -156,6 +156,10 @@
 		var FORCE_MULTIPLIER = 1;
 		var METER = 100; // how many pixels is a METER
 		var NUM_BOXES = 0;
+		var STAGE_WIDTH = 600;
+		var STAGE_HEIGHT = 400;
+		var BOT_WIDTH = 216;
+		var BOT_HEIGHT = 216;
 	
 		var b2Vec2 = Box2D.Common.Math.b2Vec2,
 			b2BodyDef = Box2D.Dynamics.b2BodyDef,
@@ -172,12 +176,6 @@
 		var up;
 		var bot;
 
-		var stageWidth = 600;
-		var stageHeight = 400;
-
-		var botWidth = 216;
-		var botHeight = 216;
-
 		var worldElem = document.getElementById('world');
 		var gioBotElem;
 
@@ -192,11 +190,11 @@
 			bodyDef = new b2BodyDef();
 
 			//ground
-			addBox(stageWidth/2, stageHeight, stageWidth, 10, b2Body.b2_staticBody).element.className += ' wall';
+			addBox(STAGE_WIDTH/2, STAGE_HEIGHT, STAGE_WIDTH, 10, b2Body.b2_staticBody).element.className += ' wall';
 			//left wall
-			addBox(0, stageHeight/2-5, 10, stageHeight, b2Body.b2_staticBody).element.className += ' wall';
+			addBox(0, STAGE_HEIGHT/2-5, 10, STAGE_HEIGHT, b2Body.b2_staticBody).element.className += ' wall';
 			//right wall
-			addBox(stageWidth, stageHeight/2-5, 10, stageHeight, b2Body.b2_staticBody).element.className += ' wall';
+			addBox(STAGE_WIDTH, STAGE_HEIGHT/2-5, 10, STAGE_HEIGHT, b2Body.b2_staticBody).element.className += ' wall';
 			
 			var y = 0;
 			
@@ -204,21 +202,21 @@
 				var w = 100 + 100*Math.random();
 				var h = 50 + 10*Math.random();
 				y+= h;
-				var stackedY = stageHeight - y + h/2;
-				var boxObj = addBox(stageWidth/2 + 2*Math.random(), stackedY, w, h, b2Body.b2_dynamicBody);
+				var stackedY = STAGE_HEIGHT - y + h/2;
+				var boxObj = addBox(STAGE_WIDTH/2 + 2*Math.random(), stackedY, w, h, b2Body.b2_dynamicBody);
 				bodies.push(boxObj.body);
 				boxes.push(boxObj.element);
 				dimensions.push({w: w, h: h});
 			}
 
 			//add giobot
-			var botObj = addBox(stageWidth/2,0,botWidth,botHeight,b2Body.b2_dynamicBody);
+			var botObj = addBox(STAGE_WIDTH/2,0,BOT_WIDTH,BOT_HEIGHT,b2Body.b2_dynamicBody);
 			bot = botObj.body;
 			gioBotElem = botObj.element;
 			gioBotElem.id = 'logo';
 			bodies.push(bot);
 			boxes.push(gioBotElem);
-			dimensions.push({w: botWidth, h: botHeight});
+			dimensions.push({w: BOT_WIDTH, h: BOT_HEIGHT});
 		}
 		
 		function addBox(x,y,w,h, type) {
@@ -243,7 +241,7 @@
 			world.Step(1 / 60,  3,  3);
             world.ClearForces();
 
-			positionElement(bot, gioBotElem, botWidth, botHeight);
+			positionElement(bot, gioBotElem, BOT_WIDTH, BOT_HEIGHT);
 			
 			for (var i=0; i < bodies.length; i++) {
 				var body = bodies[i];

@@ -329,8 +329,9 @@
 		
 		socket.on('gio', function (data) {
 			if('x' in data && 'y' in data && 'z' in data) {
+				// Signs here need to be changed based on the sensor's relative orientation of x, y and z
 				gioData.x = -data.x;
-				gioData.y = -data.y;
+				gioData.y = data.y;
 				gioData.z = -data.z;
 				gioTS = new Date().getTime();
 			}

@@ -156,9 +156,28 @@
 			opacity: 1;
 		}
 		
+		#autocamera {
+			position: fixed;
+			z-index: 200;
+			width: 200px;
+			padding: 10px;
+			border-radius: 2em;
+			background: #FC0;
+			color: #555;
+			left: 50%;
+			top: 10px;
+			margin-left: -100px;
+			display: none;
+		}
+		#autocamera:hover {
+			color: #000;
+			cursor: pointer;
+		}
+		
 	</style>
 </head>
 <body>
+	<div id="autocamera" onmouseup="useAutoCamera=true; this.style.display='none'; return false;">Switch to Auto Camera</div>
 	<div id="multiplier">
 		Sensitivity: <span id="multipliervalue">0.1</span>
 		<br><input id="multiplierslider" type="range" min="1" max="50" value="5" onchange="setForceMultiplier(this.value/50)">
@@ -649,19 +668,15 @@
 		}
 		
 		var mouseDown = false;
-		var mouseUpTimer = -1;
-		var autoCameraDelay = 2000; // How many ms to wait before returning to auto camera mode
 		var useAutoCamera = true;
 		function onDocumentMouseDown(event) {
-			clearTimeout(mouseUpTimer);
 			mouseDown = true;
 			useAutoCamera = false;
+			document.getElementById('autocamera').style.display = 'block';
 		}
 		
 		function onDocumentMouseUp(event) {
 			mouseDown = false;
-			clearTimeout(mouseUpTimer);
-			mouseUpTimer = setTimeout(function() { useAutoCamera = true; }, autoCameraDelay);
 		}
 	</script>
 	

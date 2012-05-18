@@ -100,11 +100,17 @@
 		.labelx { color: rgba(206,  38,  38, 0.1); }
 		.labely { color: rgba( 81, 184,  99, 0.1); }
 		.labelz { color: rgba(  9,  54, 172, 0.1); }
-		#logo {
+		#giobot {
 			width: 480px;
 			height: 450px;
 			background: url('giobotbig.png');
 			border: none;
+		}
+		#logo {
+			width: 255px;
+			height: 290px;
+			background: url('projectgiologo.png') no-repeat;
+			opacity: 0.4;
 		}
 		@-webkit-keyframes bounce { 
 		    0% { -webkit-transform: translateY(-30px); }
@@ -140,6 +146,7 @@
 	</style>
 </head>
 <body>
+	<div id="logo"></div>
 	<pre id="log"></pre>
 	<div id="graph">
 		<div class="graphwrapper"><canvas class="graphs" id="chartx" width="200" height="200"></canvas><div class="axislabel labelx">X</div></div>
@@ -158,7 +165,7 @@
 		var METER = 100; // how many pixels is a METER
 		var NUM_BOXES = 0;
 		var STAGE_WIDTH = window.innerWidth;
-		var STAGE_HEIGHT = window.innerHeight+10;
+		var STAGE_HEIGHT = window.innerHeight;
 		var BOT_WIDTH = 480;
 		var BOT_HEIGHT = 450;
 		
@@ -246,7 +253,7 @@
 			var botObj = addPolygon(BOT_WIDTH/2+50,STAGE_HEIGHT - BOT_HEIGHT/2 - 50,BOT_WIDTH,BOT_HEIGHT,b2Body.b2_dynamicBody, points);
 			bot = botObj.body;
 			gioBotElem = botObj.element;
-			gioBotElem.id = 'logo';
+			gioBotElem.id = 'giobot';
 			bodies.push(bot);
 			boxes.push(gioBotElem);
 			dimensions.push({w: BOT_WIDTH, h: BOT_HEIGHT});

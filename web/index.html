@@ -143,9 +143,26 @@
 			background: none;
 		}
 		
+		#multiplier {
+			z-index: 200;
+			position: fixed;
+			bottom: 10px;
+			left: 10px;
+			opacity: 0.1;
+			-webkit-transition: opacity 200ms ease-out;
+		}
+		
+		#multiplier:hover {
+			opacity: 1;
+		}
+		
 	</style>
 </head>
 <body>
+	<div id="multiplier">
+		Sensitivity: <span id="multipliervalue">0.1</span>
+		<br><input id="multiplierslider" type="range" min="1" max="50" value="5" onchange="setForceMultiplier(this.value/50)">
+	</div>
 	<div id="logo"></div>
 	<pre id="log"></pre>
 	<div id="graph">
@@ -190,6 +207,19 @@
 
 		var worldElem = document.getElementById('world');
 		var gioBotElem;
+		
+		function setForceMultiplier(value) {
+			FORCE_MULTIPLIER = value;
+			document.getElementById('multipliervalue').innerHTML = value;
+			localStorage.setItem('forcemultiplier',FORCE_MULTIPLIER);
+		}
+		
+		// Update slider based on saved data
+		var savedForceMultiplier = localStorage.getItem('forcemultiplier');
+		if(savedForceMultiplier) {
+			setForceMultiplier(savedForceMultiplier);
+			document.getElementById('multiplierslider').value = savedForceMultiplier * 50;
+		}
 
 		function initWorld() {
 			world = new b2World(new b2Vec2(0, 10), true);

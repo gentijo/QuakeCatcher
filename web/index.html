@@ -433,6 +433,7 @@
 		
 		var enable3D = true; // TODO: toggle between 3d modes
 		var enableGraph = true;
+		var enableStats = false;
 
 		if(enable3D) {
 			document.addEventListener( 'mousedown', onDocumentMouseDown, false );
@@ -503,11 +504,13 @@
 			catch (e) {
 			}
 
-			stats = new Stats();
-			stats.domElement.style.position = 'absolute';
-			stats.domElement.style.top = '0px';
-			stats.domElement.style.zIndex = 100;
-			container.appendChild( stats.domElement );
+			if(enableStats) {
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.zIndex = 100;
+				container.appendChild( stats.domElement );
+			}
 			
 			createMeasureScene();
 		}
@@ -549,7 +552,7 @@
 			requestAnimationFrame(animate);
 			draw();
 			render();
-			stats.update();
+			if(stats) { stats.update(); }
 		}
 
 		function log( text ) {

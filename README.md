@@ -1,9 +1,12 @@
-Quake Catcher
-=============
+Project GIO Quake Catcher
+=========================
 
 An open plan earthquake sensor that works with a quake sensor network like QCN (Stanford [Quake Catcher Network](http://qcn.stanford.edu/)).
 
+<a href="https://github.com/gentijo/QuakeCatcher/blob/master/pics/visualizer_02.png?raw=true"><img src="https://github.com/gentijo/QuakeCatcher/blob/master/pics/visualizer_02.png?raw=true" width="512" height="384"></a>
+
 <a href="http://www.makezine.com/go/makerfaire"><img src="http://cdn.makezine.com/make/makerfaire/bayarea/2012/mf_bayarea_150X60_seeus.gif" alt="See us at Maker Faire!" width="150" height="60" border="0" /></a>
+<a href="http://makerfaire.com/pub/e/7835">Talk to us at Maker Faire! Exhibit #7835</a>
 
 #### What's an Earthquake Sensor? ####
 
@@ -39,3 +42,13 @@ The construction of the case will be designed for outdoor use. The long term goa
 We live in the Bay Area and have friends who live in other earthquake heavy regions (Japan) so this is just our way of getting involved. This is also a great project to learn about electronics, coding and industrial design.
 
 Check out [Ready.gov](http://www.ready.gov/earthquakes) for more great resources on earthquake readiness.
+
+#### How You Can Participate ####
+
+First thing you can do is help out with the Quake Catcher community. Visit http://qcn.stanford.edu and find out how you can participate.
+
+If you're interested in the hardware or code we're on <a href="https://github.com/gentijo/QuakeCatcher/">github</a>! Otherwise, contact us here: jianshen+gio@gmail.com
+
+#### Team GIO ####
+
+John Gentilin, Raymond Chan and Jian Shen

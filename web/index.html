@@ -97,9 +97,9 @@
 			font-size: 100px;
 			font-weight: bold;
 		}
-		.labelx { color: rgba(206,  38,  38, 0.1); }
-		.labely { color: rgba( 81, 184,  99, 0.1); }
-		.labelz { color: rgba(  9,  54, 172, 0.1); }
+		.labelx { color: rgba(206,  38,  38, 0.5); }
+		.labely { color: rgba( 81, 184,  99, 0.5); }
+		.labelz { color: rgba(  9,  54, 172, 0.5); }
 		#giobot {
 			width: 480px;
 			height: 450px;
@@ -110,7 +110,7 @@
 			width: 255px;
 			height: 290px;
 			background: url('projectgiologo.png') no-repeat;
-			opacity: 0.4;
+			opacity: 0.9;
 		}
 		@-webkit-keyframes bounce { 
 		    0% { -webkit-transform: translateY(-30px); }
@@ -738,9 +738,9 @@
 		var yLine = new TimeSeries(timeLineOptions);
 		var zLine = new TimeSeries(timeLineOptions);
 
-		smoothieX.addTimeSeries(xLine, { strokeStyle: '#CE2626', lineWidth: 1 });
-		smoothieY.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 1 });
-		smoothieZ.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 1 });
+		smoothieX.addTimeSeries(xLine, { strokeStyle: '#CE2626', lineWidth: 3 });
+		smoothieY.addTimeSeries(yLine, { strokeStyle: '#51B863', lineWidth: 3 });
+		smoothieZ.addTimeSeries(zLine, { strokeStyle: '#0936AC', lineWidth: 3 });
 		
 		function smooth(data, filterValue, smoothValue) {
 			return (data*(1-filterValue) + smoothValue*filterValue);

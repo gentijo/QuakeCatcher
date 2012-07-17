@@ -20,7 +20,7 @@ int main()
 
   gs_Init(&Serial1, "ProjectGIO", "QuakeCatcher");
 
-  connectionId = gs_open_connection("192.168.0.110", "8125");
+  connectionId = gs_open_connection("192.168.0.110", "9125");
 
   printf("\nInit Complete\n");
 

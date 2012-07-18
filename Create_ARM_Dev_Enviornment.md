@@ -1,5 +1,5 @@
-
-#Creating an ARM developement Environment for the ARM STM32 F4 using Eclipse on MaxOSX
+#Creating an ARM developement Environment 
+#For the STM32F4 using Eclipse on MaxOSX
 ##Target: Compile the demo project for the STM32F4 Discovery Board from the ChibiOS package.
 
 Download the Eclipse IDE for C/C++ Developers from http://www.eclipse.org/downloads.

@@ -1,8 +1,8 @@
-#Creating an ARM developement Environment 
-#For the STM32F4 using Eclipse on MaxOSX
+#Creating an ARM developement Environment for the STM32F4 using Eclipse on MaxOSX
 
-##Target: Compile the ChibiOS demo project   
-for the STM32F4 Discovery Board.
+##Target: Compile the ChibiOS demo project for the STM32F4 Discovery Board.
+
+###Basic Eclipse Setup
 
 Download the Eclipse IDE for C/C++ Developers from http://www.eclipse.org/downloads.
 Unzip and installed in a perfered location. (I chose /Java)
@@ -22,37 +22,41 @@ PATH=$PATH:/opt/yagarto-4.7.1/bin
 export PATH
 /Java/eclipse-juno/eclipse&
 ```
-Change the directories to Eclipse and Yagarto to match where you installed the products.
+Change the directories to Eclipse and Yagarto to match where you installed the respective products.
 
 Run eclipse by clicking on the .command file in Finder.
 
 Running this script will open a Terminal window, if you want Terminal to close after
-launching Eclipse, go into preferences for Terminal and go to Settings / Shell.
-Set the "When the shell exists" to "Close if the shell exited cleanly" and "Prompt 
-before closing" to "Never"
+launching Eclipse, go into preferences for Terminal and go to Settings / Shell.   
+Set:   
+**"When the shell exists" to "Close if the shell exited cleanly"**   
+**"Prompt before closing" to "Never"**   
 
+###Add in ARM tools for Eclipse
 
 Download the Eclipse ARM tools from http://sourceforge.net/projects/gnuarmeclipse/
 Install the ARM tools into Eclispe by selecting from the Main Menu,
 Help / Install New Software. Then in the dialog box click the Add button. In the
 Add Repositiory dialog, click archive and select the zip file you just downloaded.
 
-Next select the CDT GNU Cross Development tools and then click the Next button, agree
+Select the CDT GNU Cross Development tools and then click the Next button, agree
 to the license and install the package. You will be prompted to restart Eclipse once it
 is complete.
 
-Next clone ChibiOS from https://github.com/mabl/ChibiOS
+###Configure ChibiOS as an Eclipse Project.
+
+Clone ChibiOS Source Code from https://github.com/mabl/ChibiOS
 
 In Eclipse add the Demo project for the board.
 
-Select File / New Makefile Project from Existing Code.
+From the main menu, select *File / New Makefile Project from Existing Code*.
 Type in the project name and browse for the subdirectory
 chibios/trunk/demos/ARMCM4-STM32F407-DISCOVERY under the
 directory where you cloned the project.
 
 For toolchain, select ARM Mac OS X GCC (Yagarto)
 
-Then click finsh.. The Project should show up in the Project Explorer.
+Click finsh.. The Project should show up in the Project Explorer.
 Right click on the project and select "Clean Project"
 Right click on the project and select "Build Project"
 

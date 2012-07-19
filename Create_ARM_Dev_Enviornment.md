@@ -65,3 +65,41 @@ If all is installed correctly, the console log will show a bunch of Compiling st
 Open main..c in the editor.. You may get a bunch of undefined referencess. 
 If so, right click on the project and select "Index / Rebuild All"
 
+##Configuring Break Point Debugging and Loading the Demo Project.
+
+###Acquire ST Link tools
+Put st-util and st-flash somewhere.
+
+###Configuring ST-Util to run as a GDB Server from Eclipse
+From Eclipse select (from the main menu) Run / External Tools / External Tools Configuration
+Select "New Configiration" from the toolbar and configure an entry as the one is in the picture
+below. Modify the path to st-util to match where you installed st-link. Choose apply, then close
+once configured.
+
+<img src="https://github.com/gentijo/QuakeCatcher/raw/master/pics/GDBServer-ExtToolConfig.png" />
+
+###Install the Zylin GDB Debugger interface.
+
+From the main menu on Eclipse, select Help / Install New Software
+In the **Work With** line enter http://opensource.zylin.com/zylincdt 
+
+Zylin Embedded CDT should show up in the list below, select it and choose *Next*
+Keep following next and accept all licenses to install the module.
+
+###Configure the Project to run the debugger
+In the root of the Demo Project, create the file gdbinit.txt and add the following lines.
+```code
+file build/ch.elf
+target remote 127.0.0.1:4242
+load
+```
+
+From the main menu, select Run / Debug Configurations.
+There should be an entry on the left side Zylin Embedded debug (Native)
+Select it then choose *New Launch Configuration* from the toolbar above.
+
+Configure the Main and Debugger tabs using the examples below.. Note the GDB Command
+file should point to your gdbinit.txt
+<img src="https://github.com/gentijo/QuakeCatcher/raw/master/pics/ARMProgDbgCfg_Main.png" />
+<img src="https://github.com/gentijo/QuakeCatcher/raw/master/pics/ARMProgDbgCfg_DebuggerTab.png" />
+
